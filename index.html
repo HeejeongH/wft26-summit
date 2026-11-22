@@ -1244,7 +1244,9 @@ $("v-home").addEventListener("click", (e) => { const b = e.target.closest("[data
 
 
 /* ---------- 일일 초청 현황 보고 (교수님 보고용) ---------- */
-const REP_FIELDS = ["국회", "정부", "지자체", "학계", "기업", "WFT 조직위", "언론･문화계", "국제기구･주한 외교대사", "지방의회"];
+const REP_FIELDS = ["WFT 조직위", "국회", "정부", "지자체", "지방의회", "기업", "학계", "언론･문화계", "국제기구･주한 외교대사"];
+const REP_LABEL = { "WFT 조직위": "WFT 조직위·협의회", "기업": "기업·금융", "언론･문화계": "언론·문화계", "국제기구･주한 외교대사": "국제기구·주한 외교대사" };
+const repLab = (f) => REP_LABEL[f] || f;
 const REP_GRADES = ["VVIP", "VIP", "Special"];
 const REP_COLORS = { "국회": ["#e8eefc", "#2c56c9"], "정부": ["#e3f4f1", "#1f7a6b"], "지자체": ["#e6f1f8", "#1c6a93"], "학계": ["#f0e8fb", "#7a3ec8"], "기업": ["#fdf0e1", "#b0631a"],
   "WFT 조직위": ["#e6e9f2", "#16224a"], "언론･문화계": ["#fce8f1", "#b03a73"], "국제기구･주한 외교대사": ["#e6f5ec", "#2b8a57"], "지방의회": ["#f3ece4", "#7a5a3a"] };
@@ -1305,7 +1307,7 @@ function repText(R) {
   L.push(`■ 전체: 공문 발송 ${R.total.inv}명 (금일 ${R.total.tod}명) / 참석 ${R.total.att} · 불참 ${R.total.dec} · 미응답 ${R.total.none}`);
   repMergeVip(R.grades).map((G) => R.sp && (G.g === "VVIP" || G.g === "VIP") ? { ...G, label: `${G.g} (Special_${G.g} 포함)` } : G).filter((G) => G.total.inv || G.total.att || G.total.dec).forEach((G) => {
     L.push("", `■ ${G.label || G.g} (총 ${G.total.all}명 중 공문 발송 ${G.total.inv}명)`);
-    G.fields.filter((x) => x.inv || x.att || x.dec).forEach((x) => L.push(`  - ${x.f}: 총 ${x.all}명 중 공문발송 ${x.inv}명${x.tod ? `(금일 ${x.tod})` : ""}, 이중 참석 ${x.att}명, 불참 ${x.dec}명, 미응답 ${x.none}명`));
+    G.fields.filter((x) => x.inv || x.att || x.dec).forEach((x) => L.push(`  - ${repLab(x.f)}: 총 ${x.all}명 중 공문발송 ${x.inv}명${x.tod ? `(금일 ${x.tod})` : ""}, 이중 참석 ${x.att}명, 불참 ${x.dec}명, 미응답 ${x.none}명`));
   });
   L.push("", `■ 참석 확정 ${R.att.length}명 (일자별)`);
   const DS = repDaySplit(R.att);
@@ -1366,7 +1368,7 @@ function renderReport() {
   const n0 = (v, cls) => v ? `<span class="${cls || ""}">${v}</span>` : `<span class="z">·</span>`;
   const gtable = (G) => `<div class="gt"><div class="gtt"><span class="gname gn-${esc(G.g)}">${esc(G.label || G.g)}</span><span class="meta">대상 ${G.total.all}명 · 발송 ${G.total.inv}명${G.total.tod ? ` (오늘 +${G.total.tod})` : ""}</span></div>
     <table class="st"><thead><tr><th>분야</th><th>대상</th><th>발송</th><th>참석</th><th>불참</th></tr></thead><tbody>
-    ${G.fields.map((x) => { const [, fg] = repColor(x.f); return `<tr><td>${esc(x.f)}</td><td class="mut">${x.all}</td><td>${n0(x.inv, "b")}${x.tod ? `<small class="td">+${x.tod}</small>` : ""}</td><td>${n0(x.att, "c-att b")}</td><td>${n0(x.dec, "c-dec b")}</td></tr>`; }).join("")}
+    ${G.fields.map((x) => { const [, fg] = repColor(x.f); return `<tr><td>${esc(repLab(x.f))}</td><td class="mut">${x.all}</td><td>${n0(x.inv, "b")}${x.tod ? `<small class="td">+${x.tod}</small>` : ""}</td><td>${n0(x.att, "c-att b")}</td><td>${n0(x.dec, "c-dec b")}</td></tr>`; }).join("")}
     <tr class="tot"><td>합계</td><td class="mut">${G.total.all}</td><td>${n0(G.total.inv, "b")}</td><td>${n0(G.total.att, "c-att b")}</td><td>${n0(G.total.dec, "c-dec b")}</td></tr></tbody></table></div>`;
   const MG = repMergeVip(R.grades).map((G) => R.sp && (G.g === "VVIP" || G.g === "VIP") ? { ...G, label: `${G.g} (Special_${G.g} 포함)` } : G);
   const main = MG.filter((G) => G.g === "VVIP" || G.g === "VIP");
@@ -1378,13 +1380,13 @@ function renderReport() {
   const flow = (xs) => xs.length ? repByGrade(xs).map(([g, ys]) => `<div class="pl"><span class="pg pg-${esc(g).replace(/\s/g, "")}">${esc(g)}</span><span class="pns">${repSortKo(ys).map(chip).join("")}</span></div>`).join("") : `<div class="z" style="font-size:12px">없음</div>`;
   const DS = repDaySplit(R.att);
   const usedF = [...new Set([...R.att, ...R.dec].map((x) => x.f))];
-  const legend = `<div class="legend">${REP_FIELDS.concat(usedF.filter((f) => !REP_FIELDS.includes(f))).filter((f) => usedF.includes(f)).map((f) => { const [bg, fg] = repColor(f); return `<span><i style="background:${fg}"></i>${esc(f)}</span>`; }).join("")}</div>`;
+  const legend = `<div class="legend">${REP_FIELDS.concat(usedF.filter((f) => !REP_FIELDS.includes(f))).filter((f) => usedF.includes(f)).map((f) => { const [bg, fg] = repColor(f); return `<span><i style="background:${fg}"></i>${esc(repLab(f))}</span>`; }).join("")}</div>`;
   const dcol = (head, n, sub, body, cls) => `<div class="dcol ${cls || ""}"><div class="dhead"><b>${head}</b><strong>${n}명</strong></div>${sub ? `<div class="dsub">${sub}</div>` : ""}${body}</div>`;
   const NAME_MAX = 12;
   const colBody = (xs) => {
     if (!xs.length) return `<div class="zero" style="font-size:12px">없음</div>`;
     const counts = `<div class="crs">${repGroup(xs).map(([f, ys]) => { const [, fg] = repColor(f); const gg = repByGrade(ys); const gb = gg.length > 1 ? gg.map(([g, zs]) => `${g} ${zs.length}`).join(" · ") : gg[0][0];
-      return `<div class="cr"><span class="cf">${esc(f)}</span><b>${ys.length}</b><small>${esc(gb)}</small></div>`; }).join("")}</div>`;
+      return `<div class="cr"><span class="cf">${esc(repLab(f))}</span><b>${ys.length}</b><small>${esc(gb)}</small></div>`; }).join("")}</div>`;
     if (xs.length <= NAME_MAX) return flow(xs);
     return counts + `<details class="nfold"><summary>명단 ${xs.length}명 · 펼치기</summary>${flow(xs)}</details>`;
   };
