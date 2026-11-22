@@ -139,6 +139,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .rep table.mx tr.tot td{background:none;border-top:2px solid var(--line);border-bottom:0;font-weight:700}.rep table.mx tr.tot .bar i{background:var(--blue)}
 .rep .mxleg em{font-style:normal;font-weight:700;color:var(--blue)}
 .rep .gtwrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+.rep .gtwrap.g3{grid-template-columns:repeat(3,1fr);gap:12px}.rep .gtwrap.g3 > .gt:first-child .gtt{background:#fde68a !important}.rep .gtwrap.g3 > .gt:nth-child(2) .gtt{background:#e6e9f2 !important}.rep .gtwrap.g3 > .gt:nth-child(3) .gtt{background:var(--blue-soft) !important}
 .rep .gtt{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
 .rep .gname{font-weight:800;font-size:14px;padding-bottom:1px;border-bottom:2px solid var(--muted)}.rep .gname.gn-VVIP{border-color:#16224a;color:#16224a}.rep .gname.gn-VIP{border-color:#2c56c9;color:#2c56c9}
 .rep table.st{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
@@ -150,7 +151,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .rep table.st .td{color:var(--blue);font-weight:700;margin-left:4px;font-size:10px}
 .rep table.st tr.tot td{background:none;border-top:1px solid var(--line);border-bottom:0;font-weight:700}
 .rep .rest{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12px;color:var(--muted);margin-top:8px}.rep .rest b{color:var(--ink);margin-right:4px}
-@media (max-width:800px){.rep .gtwrap{grid-template-columns:1fr}}
+@media (max-width:800px){.rep .gtwrap,.rep .gtwrap.g3{grid-template-columns:1fr}}
 .rep .kpi{display:flex;margin:12px 0 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .rep .kpi div{flex:1;padding:8px 14px;border-left:1px solid var(--line)}.rep .kpi div:first-child{border-left:0;padding-left:2px}
 .rep .kpi span{display:block;font-size:11px;color:var(--muted)}.rep .kpi b{font-size:22px;font-weight:800}.rep .kpi small{color:var(--muted);margin-left:4px;font-size:12px}
@@ -1256,6 +1257,12 @@ function repDates(s) {
   return [...String(s || "").matchAll(/(\d{2,4})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})/g)].map((m) => (m[1].length === 2 ? "20" + m[1] : m[1]) + "-" + m[2].padStart(2, "0") + "-" + m[3].padStart(2, "0"));
 }
 const repIsDay = (s, d) => repDates(s).includes(d);
+function repKeyNames() {
+  const C = (typeof S !== "undefined" && S.live && S.live.C) || [];
+  const row = C.find((r) => /^KEY/i.test(String((r || [])[0] || "").trim()));
+  if (!row) return [];
+  return row.slice(2).flatMap((c) => String(c || "").split("\n")).map((l) => l.replace(/^[•\s]+/, "").replace(/\s*\(.*$/, "").trim()).filter(Boolean);
+}
 function buildReport(rows, mode, by) {
   const today = kstToday();
   const list = (rows || []).filter((r) => r.src !== "hwp" && r.grade !== "명단 제외" && (r.name || r.org)).map((r) => ({ ...r, field: r.field || "기타", g: r.grade === "Special" ? (/_VVIP$/.test(r.gfull || "") ? "VVIP" : "VIP") : REP_GRADES.includes(r.grade) || r.grade === "실무위원회" || r.grade === "동행" ? r.grade : "구분 미정",
@@ -1271,6 +1278,9 @@ function buildReport(rows, mode, by) {
   };
   const byField = (rs) => orderF.map((f) => ({ f, ...agg(rs.filter((r) => r.field === f)) })).filter((x) => x.all);
   const grades = [...REP_GRADES, "실무위원회", "동행", "구분 미정"].map((g) => { const rs = list.filter((r) => r.g === g); return { g, total: agg(rs), fields: byField(rs) }; }).filter((x) => x.total.all);
+  const KN = repKeyNames();
+  if (KN.length) { const isKey = (r) => { const nm = String(r.name || "").trim(), og = String(r.org || "").replace(/\s+/g, ""); return KN.some((k) => nm === k || nm.split(/[･·]/)[0].trim() === k || (k.length > 2 && og.startsWith(k.replace(/\s+/g, "")))); };
+    const ks = list.filter(isKey); if (ks.length) grades.unshift({ g: "KEY", total: agg(ks), fields: byField(ks) }); }
   return {
     v: 3, sp: 1, date: today, at: Date.now(), mode: mode || "manual", by: by || null,
     grades, fields: byField(list), total: agg(list),
@@ -1366,14 +1376,17 @@ function renderReport() {
     .map(([lab, gs]) => [lab, R.grades.filter((G) => gs.includes(G.g))]).filter(([, Gs]) => Gs.length);
   const sum = (arr) => arr.reduce((o, x) => { ["all", "inv", "tod", "att", "dec", "none"].forEach((k) => (o[k] = (o[k] || 0) + (x[k] || 0))); return o; }, {});
   const n0 = (v, cls) => v ? `<span class="${cls || ""}">${v}</span>` : `<span class="z">·</span>`;
+  let UF = [];
+  const ufRows = (G) => UF.length ? UF.map((f) => G.fields.find((x) => x.f === f) || { f, all: 0, inv: 0, att: 0, dec: 0 }) : G.fields;
   const gtable = (G) => `<div class="gt"><div class="gtt"><span class="gname gn-${esc(G.g)}">${esc(G.label || G.g)}</span><span class="meta">대상 ${G.total.all}명 · 발송 ${G.total.inv}명${G.total.tod ? ` (오늘 +${G.total.tod})` : ""}</span></div>
     <table class="st"><thead><tr><th>분야</th><th>대상</th><th>발송</th><th>참석</th><th>불참</th></tr></thead><tbody>
-    ${G.fields.map((x) => { const [, fg] = repColor(x.f); return `<tr><td>${esc(repLab(x.f))}</td><td class="mut">${x.all}</td><td>${n0(x.inv, "b")}${x.tod ? `<small class="td">+${x.tod}</small>` : ""}</td><td>${n0(x.att, "c-att b")}</td><td>${n0(x.dec, "c-dec b")}</td></tr>`; }).join("")}
+    ${ufRows(G).map((x) => { const [, fg] = repColor(x.f); return `<tr><td>${esc(repLab(x.f))}</td><td class="mut">${x.all}</td><td>${n0(x.inv, "b")}${x.tod ? `<small class="td">+${x.tod}</small>` : ""}</td><td>${n0(x.att, "c-att b")}</td><td>${n0(x.dec, "c-dec b")}</td></tr>`; }).join("")}
     <tr class="tot"><td>합계</td><td class="mut">${G.total.all}</td><td>${n0(G.total.inv, "b")}</td><td>${n0(G.total.att, "c-att b")}</td><td>${n0(G.total.dec, "c-dec b")}</td></tr></tbody></table></div>`;
   const MG = repMergeVip(R.grades).map((G) => R.sp && (G.g === "VVIP" || G.g === "VIP") ? { ...G, label: `${G.g} (Special_${G.g} 포함)` } : G);
-  const main = MG.filter((G) => G.g === "VVIP" || G.g === "VIP");
-  const rest = MG.filter((G) => G.g !== "VVIP" && G.g !== "VIP");
-  const matrix = `<div class="gtwrap">${main.map(gtable).join("")}</div>
+  const main = ["KEY", "VVIP", "VIP"].map((g) => MG.find((G) => G.g === g)).filter(Boolean);
+  const rest = MG.filter((G) => !["KEY", "VVIP", "VIP"].includes(G.g));
+  UF = REP_FIELDS.concat(main.flatMap((G) => G.fields.map((x) => x.f)).filter((f) => !REP_FIELDS.includes(f))).filter((f, i, a) => a.indexOf(f) === i && main.some((G) => G.fields.some((x) => x.f === f)));
+  const matrix = `<div class="gtwrap${main.length === 3 ? " g3" : ""}">${main.map(gtable).join("")}</div>
     ${rest.length ? `<div class="rest">${rest.map((G) => `<span><b>${esc(G.g)}</b> 대상 ${G.total.all} · 발송 ${G.total.inv} · 참석 ${G.total.att} · 불참 ${G.total.dec}</span>`).join("")}</div>` : ""}`;
   // ② 이름: 등급별 한 줄, 칩 색 = 분야
   const chip = (x) => `<span class="pn${x.c && x.c !== "확인 완료" ? " chk" : ""}" title="${esc(x.f + " · " + x.o + " " + (x.t || ""))}">${esc(x.n)}</span>`;
