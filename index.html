@@ -180,7 +180,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .prep .wh .tag{position:absolute;top:-10px;right:8px;background:var(--navy);color:#fff;font-size:10.5px;padding:1px 7px;border-radius:999px}
 .prep .wl{padding:4px 8px;flex:1}
 .prep .ck{display:flex;gap:7px;align-items:flex-start;padding:6px 2px;border-top:1px dashed var(--line);font-size:12.2px;line-height:1.4;color:inherit;text-decoration:none}
-.prep .ck:first-child{border-top:0}.prep .ck:hover{background:#f3f4f6}
+.prep .ck{cursor:pointer;user-select:none}.prep .ck:first-child{border-top:0}.prep .ck:hover{background:#f3f4f6}
 .prep .ck .bx{flex:none;width:16px;height:16px;border:1.6px solid #9ca3af;border-radius:4px;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff}
 .prep .ck.on .bx{background:#16a34a;border-color:#16a34a}.prep .ck.on .tx{color:#9ca3af;text-decoration:line-through}
 .prep .ck.lt .bx{border-color:#dc2626}
@@ -1282,21 +1282,28 @@ function renderPrep() {
   const today = kstToday(), dt = (d) => d ? d.slice(5).replace("-", ".").replace(/^0/, "").replace(/\.0/, ".") : "";
   const stages = []; rows.forEach((x) => { let g = stages.find((y) => y.k === x.stg); if (!g) stages.push(g = { k: x.stg, s: x.s, e: x.e, xs: [] }); g.xs.push(x); if (x.s < g.s) g.s = x.s; if (x.e > g.e) g.e = x.e; });
   let cur = stages.findIndex((g) => g.s <= today && today <= g.e); if (cur < 0) cur = stages.findIndex((g) => g.s > today); if (cur < 0) cur = stages.length - 1;
-  const done = (x) => x.st === "완료", late = (x) => !done(x) && x.st !== "보류" && x.e < today;
+  const LC = (() => { try { return JSON.parse(localStorage.getItem("wft26-prep-chk") || "{}"); } catch { return {}; } })();
+  const done = (x) => x.st === "완료" || !!LC[x.no], late = (x) => !done(x) && x.st !== "보류" && x.e < today;
   const nDone = rows.filter(done).length, nLate = rows.filter(late).length, nIng = rows.filter((x) => x.st === "진행중").length;
   const dd = Math.round((Date.parse("2026-12-15") - Date.parse(today)) / 864e5);
-  const link = (x) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301&range=H${x.row}`;
   const badge = (x) => late(x) ? `<span class="st late">${x.st === "진행중" ? "진행중 · " : ""}지연 ${Math.round((Date.parse(today) - Date.parse(x.e)) / 864e5)}일</span>` : x.st !== "대기" && !done(x) ? `<span class="st s-${esc(x.st)}">${esc(x.st)}</span>` : "";
-  const item = (x) => `<a class="ck${done(x) ? " on" : ""}${late(x) ? " lt" : ""}" href="${link(x)}" target="_blank" rel="noopener" title="누르면 구글 시트 「행사 준비」 탭의 이 줄 상태 칸이 열려요. 「완료」로 바꾸면 체크돼요.">
-      <span class="bx">${done(x) ? "✓" : ""}</span><span class="tx"><span class="ft">${esc(x.f)}</span>${esc(x.t)}${x.who || x.note || badge(x) ? `<span class="sub">${badge(x)}${x.who ? "👤 " + esc(x.who) + " " : ""}${x.note ? esc(x.note) : ""}</span>` : ""}</span></a>`;
+  const item = (x) => `<div class="ck${done(x) ? " on" : ""}${late(x) ? " lt" : ""}" data-pck="${esc(x.no)}" role="checkbox" aria-checked="${done(x)}" title="눌러서 체크/해제">
+      <span class="bx">${done(x) ? "✓" : ""}</span><span class="tx"><span class="ft">${esc(x.f)}</span>${esc(x.t)}${x.who || x.note || badge(x) ? `<span class="sub">${badge(x)}${x.who ? "👤 " + esc(x.who) + " " : ""}${x.note ? esc(x.note) : ""}</span>` : ""}</span></div>`;
   const cols = stages.map((g, i) => { const d = g.xs.filter(done).length, p = Math.round(d / g.xs.length * 100);
     return `<div class="wk${i === cur ? " now" : g.e < today ? " past" : ""}"><div class="wh">${i === cur ? `<span class="tag">현재 단계</span>` : ""}<div class="sn">${esc(g.k)}</div><div class="sd">${dt(g.s)} ~ ${dt(g.e)}</div>
       ${meta[g.k] && meta[g.k].goal ? `<div class="sg2">${esc(meta[g.k].goal)}</div>` : ""}<div class="bar"><i style="width:${p}%"></i></div><div class="sd">완료 ${d} / ${g.xs.length}</div></div>
       <div class="wl">${g.xs.map(item).join("")}</div>${meta[g.k] && meta[g.k].ms ? `<div class="ms">🎯 ${esc(meta[g.k].ms)}</div>` : ""}</div>`; }).join("");
-  el.innerHTML = `<h3>🗓 행사 준비 현황판 <span class="meta">항목을 누르면 구글 시트가 열려요 — 상태를 「완료」로 바꾸면 여기에 체크돼요</span>
-      <a class="btn small" style="margin-left:auto" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301" target="_blank" rel="noopener">시트에서 체크하기</a></h3>
+  el.innerHTML = `<h3>🗓 행사 준비 현황판 <span class="meta">항목을 눌러 체크하세요 · 체크는 이 브라우저에 저장돼요</span>
+      <a class="btn small" style="margin-left:auto" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301" target="_blank" rel="noopener">구글 시트 열기</a></h3>
     <div class="pk"><div><span>갈라디너까지</span><b>D-${dd}</b></div><div><span>전체 진행률</span><b>${Math.round(nDone / rows.length * 100)}%</b> <small>완료 ${nDone} / ${rows.length}</small></div><div><span>진행 중</span><b style="color:#1e40af">${nIng}</b></div><div><span>지연</span><b style="color:var(--red)">${nLate}</b></div></div>
     <div class="wkwrap"><div class="wks">${cols}</div></div>`;
+  el.querySelectorAll("[data-pck]").forEach((c) => c.onclick = () => {
+    const k = c.dataset.pck, x = rows.find((y) => y.no === k); if (!x) return;
+    if (x.st === "완료") { toast("구글 시트에서 「완료」로 된 항목이라 시트에서만 해제할 수 있어요."); return; }
+    if (LC[k]) delete LC[k]; else LC[k] = Date.now();
+    try { localStorage.setItem("wft26-prep-chk", JSON.stringify(LC)); } catch {}
+    renderPrep();
+  });
 }
 /* ---------- 일일 초청 현황 보고 (교수님 보고용) ---------- */
 const REP_FIELDS = ["WFT 조직위", "국회", "정부", "지자체", "지방의회", "기업", "학계", "언론･문화계", "국제기구･주한 외교대사"];
