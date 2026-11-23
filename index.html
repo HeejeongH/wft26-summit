@@ -189,7 +189,23 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .prep .st{font-size:10.5px;padding:0 6px;border-radius:999px;background:#eef0f4;color:#555;margin-right:4px}
 .prep .st.s-진행중{background:#dbeafe;color:#1e40af}.prep .st.s-보류{background:#fef3c7;color:#92400e}.prep .st.late{background:#fee2e2;color:#b91c1c}
 .prep .ms{font-size:11px;color:#444;padding:7px 10px;border-top:1px solid var(--line);background:#fbfbfd;border-radius:0 0 12px 12px}
-@media (max-width:800px){.prep .pk{grid-template-columns:repeat(2,1fr)}}
+.prep .wtabs{display:none}
+@media (max-width:800px){
+.prep h3 .meta{font-size:11.5px;line-height:1.5}
+.prep .pk{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}.prep .pk>div{padding:6px 7px}.prep .pk span{font-size:10.5px}.prep .pk b{font-size:18px}.prep .pk small{display:block;font-size:10px;color:var(--muted)}
+.prep .wtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.prep .wtabs button{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:12.5px;white-space:nowrap;color:inherit}
+.prep .wtabs button small{color:var(--muted);font-size:11px}
+.prep .wtabs button.cur{border-color:var(--navy)}
+.prep .wtabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}.prep .wtabs button.on small{color:#cbd5e1}
+.prep .wtabs .lt{color:#dc2626;font-size:9px;vertical-align:middle}
+.prep .wkwrap{overflow:visible;padding-top:4px}
+.prep .wks{display:block;min-width:0}
+.prep .wk{display:none}.prep .wk.sel{display:flex}
+.prep .wh .tag{top:-9px}
+.prep .ck{font-size:13.5px;padding:9px 2px;gap:9px}.prep .ck .bx{width:20px;height:20px;margin-top:0}
+.prep .ck .ft{font-size:11px}.prep .ck .sub{font-size:11.5px}
+}
 .rep .rs{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px 14px;background:#fff}
 .rep .rs-h{display:flex;align-items:baseline;gap:8px;font-size:14px;font-weight:800;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
 .rep .rs-h .no{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;align-self:center}
@@ -1295,14 +1311,19 @@ function renderPrep() {
   const link = (x) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301&range=H${x.row}`;
   const item = (x) => `<a class="ck${done(x) ? " on" : ""}${late(x) ? " lt" : ""}" href="${link(x)}" target="_blank" rel="noopener" title="누르면 구글 시트에서 이 줄의 상태 칸이 열려요. 「완료」로 바꾸면 모두에게 체크돼요.">
       <span class="bx">${done(x) ? "✓" : ""}</span><span class="tx"><span class="ft">${esc(x.f)}</span>${esc(x.t)}${x.who || x.note || badge(x) ? `<span class="sub">${badge(x)}${x.who ? "👤 " + esc(x.who) + " " : ""}${x.note ? esc(x.note) : ""}</span>` : ""}</span></a>`;
+  const sel = S.prepSel != null && S.prepSel < stages.length ? S.prepSel : cur;
+  const tabs = `<div class="wtabs">${stages.map((g, i) => { const d = g.xs.filter(done).length, lt = g.xs.filter(late).length;
+    return `<button data-pst="${i}" class="${i === sel ? "on" : ""}${i === cur ? " cur" : ""}">${esc(g.k)} <small>${d}/${g.xs.length}</small>${lt ? ` <b class="lt">●</b>` : ""}</button>`; }).join("")}</div>`;
   const cols = stages.map((g, i) => { const d = g.xs.filter(done).length, p = Math.round(d / g.xs.length * 100);
-    return `<div class="wk${i === cur ? " now" : g.e < today ? " past" : ""}"><div class="wh">${i === cur ? `<span class="tag">현재 단계</span>` : ""}<div class="sn">${esc(g.k)}</div><div class="sd">${dt(g.s)} ~ ${dt(g.e)}</div>
+    return `<div class="wk${i === cur ? " now" : g.e < today ? " past" : ""}${i === sel ? " sel" : ""}"><div class="wh">${i === cur ? `<span class="tag">현재 단계</span>` : ""}<div class="sn">${esc(g.k)}</div><div class="sd">${dt(g.s)} ~ ${dt(g.e)}</div>
       ${meta[g.k] && meta[g.k].goal ? `<div class="sg2">${esc(meta[g.k].goal)}</div>` : ""}<div class="bar"><i style="width:${p}%"></i></div><div class="sd">완료 ${d} / ${g.xs.length}</div></div>
       <div class="wl">${g.xs.map(item).join("")}</div>${meta[g.k] && meta[g.k].ms ? `<div class="ms">🎯 ${esc(meta[g.k].ms)}</div>` : ""}</div>`; }).join("");
   el.innerHTML = `<h3><span class="meta">항목을 누르면 구글 시트가 열려요 — 상태를 「완료」로 바꾸면 모두에게 체크돼요 · 「새로 불러오기」로 반영</span>
       <a class="btn small" style="margin-left:auto" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301" target="_blank" rel="noopener">시트에서 체크하기</a></h3>
     <div class="pk"><div><span>갈라디너까지</span><b>D-${dd}</b></div><div><span>전체 진행률</span><b>${Math.round(nDone / rows.length * 100)}%</b> <small>완료 ${nDone} / ${rows.length}</small></div><div><span>진행 중</span><b style="color:#1e40af">${nIng}</b></div><div><span>지연</span><b style="color:var(--red)">${nLate}</b></div></div>
-    <div class="wkwrap"><div class="wks">${cols}</div></div>`;
+    ${tabs}<div class="wkwrap"><div class="wks">${cols}</div></div>`;
+  el.querySelectorAll("[data-pst]").forEach((b) => b.onclick = () => { S.prepSel = +b.dataset.pst; renderPrep(); });
+  const ton = el.querySelector(".wtabs .on"); if (ton) ton.parentNode.scrollLeft = Math.max(0, ton.offsetLeft - ton.parentNode.offsetLeft - 12);
 }
 /* ---------- 일일 초청 현황 보고 (교수님 보고용) ---------- */
 const REP_FIELDS = ["WFT 조직위", "국회", "정부", "지자체", "지방의회", "기업", "학계", "언론･문화계", "국제기구･주한 외교대사"];
