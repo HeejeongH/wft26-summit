@@ -217,6 +217,33 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .prep .ck{font-size:13.5px;padding:9px 2px;gap:9px}.prep .ck .bx{width:20px;height:20px;margin-top:0}
 .prep .ck .ft{font-size:11px}.prep .ck .sub{font-size:11.5px}
 }
+.pg-info{margin:0 0 14px}.pg-info>summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--navy);padding:4px 0}
+.dkpi{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+.dkpi .dk{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.dkpi .dk span{display:block;font-size:12px;color:var(--muted);white-space:nowrap}.dkpi .dk b{display:block;font-size:28px;font-weight:800;line-height:1.2;color:var(--navy)}
+.dkpi .dk small{font-size:11.5px;color:var(--muted);white-space:nowrap}.dkpi .dk.g b{color:#15803d}.dkpi .dk.r b,.dkpi .dk.r2 small{color:#dc2626}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.dgrid .wide{grid-column:1/-1}
+.dc h3{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:14.5px}.dc h3 .btn{margin-left:auto}
+.fn{display:grid;grid-template-columns:72px 1fr 44px 38px;align-items:center;gap:8px;margin:9px 0;font-size:12.5px}
+.fn .ft{height:22px;background:#eef1f6;border-radius:6px;overflow:hidden}.fn .ft i{display:block;height:100%;background:var(--navy);border-radius:6px}
+.fn b{text-align:right;font-size:15px}.fn small{color:var(--muted);font-size:11px}
+.hb{display:grid;grid-template-columns:120px 1fr;align-items:center;gap:8px;margin:6px 0;font-size:12px}
+.hb .hl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hb .hl small{color:var(--muted);margin-left:5px;font-size:10.5px}
+.sbar{display:flex;height:18px;border-radius:5px;overflow:hidden;background:#eef1f6}
+.sbar i{display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10px;color:#fff;font-weight:700;min-width:2px}
+.sbar .att,.dleg .att{background:#16a34a}.sbar .dec,.dleg .dec{background:#dc2626}.sbar .none,.dleg .none{background:#f59e0b}.sbar .ns,.dleg .ns{background:#cbd2dc}.sbar .ns{color:#556}
+.dleg{display:flex;gap:12px;margin-top:10px;font-size:11px;color:var(--muted)}.dleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.vbars{display:flex;gap:18px;align-items:flex-end;height:190px;padding:0 10px}
+.vb{flex:1;display:flex;flex-direction:column;align-items:center;height:100%}.vb b{font-size:20px;color:#15803d}
+.vb .vt{flex:1;width:56px;display:flex;align-items:flex-end;background:#f3f5f9;border-radius:8px 8px 0 0}.vb .vt i{display:block;width:100%;background:linear-gradient(#22c55e,#15803d);border-radius:8px 8px 0 0}
+.vb span{font-weight:700;font-size:13px;margin-top:6px}.vb small{color:var(--muted);font-size:11px}
+.dnote{font-size:11.5px;color:var(--muted);margin-top:8px;text-align:right}
+.ps{display:grid;grid-template-columns:170px 1fr 48px 60px;align-items:center;gap:10px;margin:7px 0;font-size:12.5px;padding:3px 6px;border-radius:8px}
+.ps.now{background:#eef3ff;font-weight:700}.ps .pt{height:12px;background:#eef1f6;border-radius:6px;overflow:hidden}.ps .pt i{display:block;height:100%;background:#16a34a}
+.ps b{text-align:right}.ps em{font-style:normal;color:#dc2626;font-size:11.5px}
+@media (max-width:900px){.dkpi{grid-template-columns:repeat(3,1fr)}.dgrid{grid-template-columns:1fr}}
+@media (max-width:520px){.dkpi{gap:6px}.dkpi .dk{padding:8px 9px;border-radius:10px}.dkpi .dk b{font-size:20px}.dkpi .dk span{font-size:10.5px}.dkpi .dk small{font-size:10px}
+.hb{grid-template-columns:92px 1fr}.ps{grid-template-columns:1fr 70px 38px;gap:6px}.ps .pl{grid-column:1/-1}.ps .pt{grid-column:1}.vbars{height:160px}.vb .vt{width:44px}}
 .rep .rs{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px 14px;background:#fff}
 .rep .rs-h{display:flex;align-items:baseline;gap:8px;font-size:14px;font-weight:800;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
 .rep .rs-h .no{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;align-self:center}
@@ -831,8 +858,14 @@ details.lv-d summary::-webkit-details-marker{display:none}
 
     <section class="view on" id="v-home">
       <h2>대시보드</h2>
-      <div class="card rep" id="dailyReport" style="margin-bottom:14px"><div class="empty">일일 초청 현황을 불러오는 중이에요…</div></div>
-      <div class="home-top">
+      <div id="dash"><div class="card"><div class="empty">현황을 불러오는 중이에요…</div></div></div>
+      <div style="display:none"><div id="stats"></div><div id="homeIssues"></div><div id="homeTasks"></div></div>
+    </section>
+
+    <!-- PROGRAM -->
+    <section class="view" id="v-program">
+      <details class="pg-info"><summary>행사 개요 · 초청장</summary>
+      <div class="home-top" style="margin-top:10px">
         <div class="card invite">
           <a href="assets/invite_vvip.jpg" target="_blank" rel="noopener"><img src="assets/invite_vvip.jpg" alt="WFT26 Summit VVIP 초청장"></a>
           <div class="cap">VVIP 초청장 · 누르면 크게 보여요</div>
@@ -853,26 +886,7 @@ details.lv-d summary::-webkit-details-marker{display:none}
           </dl>
         </div>
       </div>
-      <div class="grid g4" id="stats" style="margin-top:14px"></div>
-      <div class="grid g2" style="margin-top:14px">
-        <div class="card" style="display:none">
-          <h3>🔴 아직 결정되지 않은 사항</h3>
-          <div id="homeIssues"></div>
-        </div>
-        <div class="card" style="display:none">
-          <h3>마감이 가까운 할 일</h3>
-          <div id="homeTasks"></div>
-        </div>
-        <div class="card" style="grid-column:1/-1">
-          <h3>최근 활동</h3>
-          <div id="activity"></div>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- PROGRAM -->
-    <section class="view" id="v-program">
+      </details>
       <div class="pg">
         <div class="pg-stick">
           <div class="pg-days" id="tlDays"></div>
@@ -894,6 +908,7 @@ details.lv-d summary::-webkit-details-marker{display:none}
     <section class="view" id="v-live">
       <h2 id="lvTitle">초청·공문 현황</h2>
       <div id="lvErr" style="font-size:12.5px;color:var(--red);margin:-6px 0 10px"></div>
+      <div id="repWrap" style="display:none"><div class="card rep" id="dailyReport" style="margin-bottom:14px"><div class="empty">일일 초청 현황을 불러오는 중이에요…</div></div></div>
       <div id="lvBody"><div class="empty">「새로 불러오기」를 누르면 구글 시트 내용이 보여요.</div></div>
     </section>
 
@@ -1037,6 +1052,7 @@ details.lv-d summary::-webkit-details-marker{display:none}
         <div class="card" style="padding:8px" id="noteList"></div>
         <div class="card" id="noteView"><div class="empty">왼쪽에서 메모를 골라 주세요.</div></div>
       </div>
+      <div class="card" style="margin-top:14px"><h3>최근 활동</h3><div id="activity"></div></div>
     </section>
 
     <!-- KB -->
@@ -1137,6 +1153,7 @@ function show(v) {
   document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
   document.querySelectorAll(".view").forEach((s) => s.classList.toggle("on", s.id === "v-" + (lv ? "live" : v)));
   $("v-live").classList.toggle("list-mode", v === "list");
+  $("repWrap").style.display = v === "status" ? "" : "none";
   if (lv) { S.liveTab = lv.t; S.liveLimit = 100000; $("lvTitle").textContent = lv.title; setTimeout(() => { if (typeof liveAuto === "function") liveAuto(); }, 0); }
   if (location.hash !== "#" + v) history.replaceState(null, "", "#" + v);
   if (v === "program" && window.TL_ON && !S.tlEditing) setTimeout(renderTimeline, 0);
@@ -1307,6 +1324,7 @@ $("v-home").addEventListener("click", (e) => { const b = e.target.closest("[data
 
 /* ---------- 행사 준비 현황판 ---------- */
 function renderPrep() {
+  try { renderDash(); } catch (e) {}
   const el = $("prepBoard"); if (!el) return;
   const R = (S.live && S.live.pr) || [];
   const rows = R.slice(1).map((r, i) => r && lvS(r[3]) ? { row: i + 2, no: lvS(r[0]), stg: lvS(r[1]), f: lvS(r[2]), t: lvS(r[3]), s: lvS(r[4]), e: lvS(r[5]), who: lvS(r[6]), st: lvS(r[7]) || "대기", note: lvS(r[8]) } : null).filter(Boolean);
@@ -1343,6 +1361,51 @@ function renderPrep() {
     ${tabs}${table}${mob}`;
   el.querySelectorAll("[data-pst]").forEach((b) => b.onclick = () => { S.prepSel = +b.dataset.pst; renderPrep(); });
   const ton = el.querySelector(".wtabs .on"); if (ton) ton.parentNode.scrollLeft = Math.max(0, ton.offsetLeft - ton.parentNode.offsetLeft - 12);
+}
+
+/* ---------- 대시보드 (그래프) ---------- */
+function renderDash() {
+  const el = $("dash"); if (!el) return;
+  const R = S.report && S.report.v === 3 ? S.report : null;
+  const today = kstToday(), dday = (d) => Math.round((Date.parse(d) - Date.parse(today)) / 864e5);
+  // 행사 준비
+  const PR = (S.live && S.live.pr) || [];
+  const prow = PR.slice(1).filter((r) => r && lvS(r[3])).map((r) => ({ stg: lvS(r[1]), s: lvS(r[4]), e: lvS(r[5]), st: lvS(r[7]) || "대기" }));
+  const pDone = prow.filter((x) => x.st === "완료").length, pLate = prow.filter((x) => x.st !== "완료" && x.st !== "보류" && x.e < today).length;
+  const stg = []; prow.forEach((x) => { let g = stg.find((y) => y.k === x.stg); if (!g) stg.push(g = { k: x.stg, s: x.s, e: x.e, n: 0, d: 0, l: 0 }); g.n++; if (x.st === "완료") g.d++; if (x.st !== "완료" && x.st !== "보류" && x.e < today) g.l++; if (x.s < g.s) g.s = x.s; if (x.e > g.e) g.e = x.e; });
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const T = R ? R.total : null;
+  const kpi = [
+    ["갈라디너까지", `D-${dday("2026-12-15")}`, "본행사 D-" + dday("2026-12-16"), ""],
+    ["초청 대상", T ? T.all : "–", "명", ""],
+    ["공문 발송", T ? T.inv : "–", T ? `발송률 ${pct(T.inv, T.all)}%` : "", ""],
+    ["참석 확정", T ? T.att : "–", T ? `회신 ${T.att + T.dec}명 중` : "", "g"],
+    ["불참", T ? T.dec : "–", T ? `미응답 ${T.none}` : "", "r"],
+    ["행사 준비", prow.length ? pct(pDone, prow.length) + "%" : "–", prow.length ? `지연 ${pLate}건` : "", pLate ? "r2" : ""],
+  ].map(([l, v, sub, c]) => `<div class="dk ${c}"><span>${l}</span><b>${v}</b><small>${sub}</small></div>`).join("");
+  const seg = (o) => { const ns = Math.max(0, o.all - o.att - o.dec - o.none); const parts = [["att", o.att], ["dec", o.dec], ["none", o.none], ["ns", ns]]; return `<div class="sbar">${parts.map(([k, n]) => n ? `<i class="${k}" style="flex:${n}" title="${({ att: "참석", dec: "불참", none: "미응답", ns: "미발송" })[k]} ${n}">${n >= 3 ? n : ""}</i>` : "").join("")}</div>`; };
+  const legend = `<div class="dleg"><span><i class="att"></i>참석</span><span><i class="dec"></i>불참</span><span><i class="none"></i>미응답</span><span><i class="ns"></i>미발송</span></div>`;
+  let funnel = "", grade = "", field = "", days = "";
+  if (R) {
+    const fs = [["초청 대상", T.all], ["공문 발송", T.inv], ["회신", T.att + T.dec], ["참석 확정", T.att]];
+    funnel = fs.map(([l, n], i) => `<div class="fn"><span class="fl">${l}</span><div class="ft"><i style="width:${pct(n, T.all)}%;opacity:${1 - i * .15}"></i></div><b>${n}</b><small>${pct(n, T.all)}%</small></div>`).join("");
+    const MG = repMergeVip(R.grades).filter((G) => G.total.all);
+    grade = MG.map((G) => `<div class="hb"><span class="hl">${esc(G.g === "VIP" && G.label ? "VIP+Sp" : G.g)}<small>${G.total.all}</small></span>${seg(G.total)}</div>`).join("");
+    field = (R.fields || []).filter((x) => x.all).map((x) => `<div class="hb"><span class="hl">${esc(repLab(x.f))}<small>${x.all}</small></span>${seg(x)}</div>`).join("");
+    const DS = repDaySplit(R.att), mx = Math.max(1, ...DS.days.map((D) => D.xs.length));
+    days = `<div class="vbars">${DS.days.map((D) => `<div class="vb"><b>${D.xs.length}</b><div class="vt"><i style="height:${pct(D.xs.length, mx)}%"></i></div><span>12/${D.d.replace("일", "")}</span><small>${esc(D.sub)}</small></div>`).join("")}</div>${DS.none.length ? `<div class="dnote">일자 미정 ${DS.none.length}명</div>` : ""}`;
+  }
+  const prep = stg.length ? stg.map((g) => { const now = g.s <= today && today <= g.e; return `<div class="ps${now ? " now" : ""}"><span class="pl">${esc(g.k)}</span><div class="pt"><i style="width:${pct(g.d, g.n)}%"></i></div><b>${g.d}/${g.n}</b>${g.l ? `<em>지연 ${g.l}</em>` : "<em></em>"}</div>`; }).join("") : `<div class="empty">불러오는 중이에요…</div>`;
+  const card = (t, body, go, cls) => `<div class="card dc ${cls || ""}"><h3>${t}${go ? `<button class="btn small" data-go="${go[0]}">${go[1]} →</button>` : ""}</h3>${body}</div>`;
+  const wait = `<div class="empty">불러오는 중이에요…</div>`;
+  el.innerHTML = `<div class="dkpi">${kpi}</div>
+    <div class="dgrid">
+      ${card("초청 진행", R ? funnel : wait, ["status", "초청·공문 현황"])}
+      ${card("일자별 참석 확정", R ? days : wait, ["ticket", "티켓 현황"])}
+      ${card("등급별 회신", R ? grade + legend : wait, ["status", "상세 보고"])}
+      ${card("분야별 회신", R ? field + legend : wait, ["list", "전체 명단"])}
+      ${card("행사 준비 진행", prep, ["prep", "행사 준비"], "wide")}
+    </div>`;
 }
 /* ---------- 일일 초청 현황 보고 (교수님 보고용) ---------- */
 const REP_FIELDS = ["WFT 조직위", "국회", "정부", "지자체", "지방의회", "기업", "학계", "언론･문화계", "국제기구･주한 외교대사"];
@@ -1465,6 +1528,7 @@ async function repCopyImage(R) {
   } finally { btn.disabled = false; btn.textContent = "이미지로 복사"; }
 }
 function renderReport() {
+  try { renderDash(); } catch (e) {}
   const el = $("dailyReport"); if (!el) return;
   const R = S.report;
   if (!R || R.v !== 3) { el.innerHTML = `<h3>📋 일일 초청 현황 보고</h3><div class="empty">${R ? "새 형식으로 다시 불러오는 중이에요…" : "아직 오늘 보고가 없어요."} <button class="btn small" id="repRefresh">지금 불러오기</button></div>`; $("repRefresh").onclick = () => refreshReport(false); return; }
