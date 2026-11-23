@@ -3526,7 +3526,7 @@ async function liveLoad(silent) {
   btn.disabled = true; btn.textContent = "불러오는 중…"; $("lvErr").textContent = "";
   try {
     const call = (range) => mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range }, { cache: false });
-    const [a, b, c, tk] = await Promise.all([call("초청명단_통합관리!A8:AD1200"), call("초청명단_근거!A2:K1200"), call("분류기준!A1:I60"), call("티켓 현황!A17:D36").catch(() => null)]);
+    const [a, b, c, tk] = await Promise.all([call("초청명단_통합관리!A8:AD1200"), call("초청명단_근거!A2:K1200"), call("분류기준!A1:M60"), call("티켓 현황!A17:D36").catch(() => null)]);
     let vrs = [];
     const KWS = [/오전|AM/i, /오찬|Lunch/i, /오후|PM/i], b01 = (x) => (x ? "1" : "0");
     try { const rr = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: "1k60hEZfW4PRoQDxq4KqvL-n170s4F1ioIlXbRREuki4", range: "설문지 응답 시트1!A2:K1000" }, { cache: false });
@@ -3994,7 +3994,7 @@ function lvRenderRaw(C) {
     if (isSp && !S.critSp) { h += `<tr><td class="g-Special gcell">${esc(g.grade)}</td><td colspan="${nF}"><button class="btn" data-crit-sp style="font-size:12px;padding:3px 10px">펼치기 ▾</button></td></tr>`; return; }
     g.rows.forEach((cells, i) => {
       h += `<tr>${i === 0 ? `<td rowspan="${g.rows.length}" class="${g.grade ? "g-" + esc(String(g.grade).split(/\s/)[0]) : ""} gcell">${esc(g.grade)}${isSp ? `<div><button class="btn" data-crit-sp style="font-size:11px;padding:2px 8px;margin-top:6px">접기 ▴</button></div>` : ""}</td>` : ""}`;
-      h += isNote(cells) ? `<td colspan="${nF}" class="cnote">${esc(cells[0])}</td>` : cells.map((x, ci) => `<td${(() => { const st = [/^(KEY|VVIP|VIP|Special)/.test(g.grade) ? "white-space:pre" : "", cells.ex ? "color:#6b7280;font-size:12px;background:#fafbfc" : ""].filter(Boolean).join(";"); return st ? ` style="${st}"` : ""; })()}>${cells.ex && ci === 0 && !x ? '<span style="font-weight:700;color:#9ca3af">예시</span>' : ""}${esc(x).replace(/\(([^()]*)\)/g, '<small style="font-size:10px;color:#a0a6b2">($1)</small>')}</td>`).join("");
+      h += isNote(cells) ? `<td colspan="${nF}" class="cnote">${esc(cells[0])}</td>` : cells.map((x, ci) => `<td${(() => { const st = [/^(KEY|VVIP|VIP|Special)/.test(g.grade) ? "white-space:pre-line;min-width:120px" : "", cells.ex ? "color:#6b7280;font-size:12px;background:#fafbfc" : ""].filter(Boolean).join(";"); return st ? ` style="${st}"` : ""; })()}>${cells.ex && ci === 0 && !x ? '<span style="font-weight:700;color:#9ca3af">예시</span>' : ""}${esc(x).replace(/\(([^()]*)\)/g, '<small style="font-size:10px;color:#a0a6b2">($1)</small>')}</td>`).join("");
       h += `</tr>`;
     });
   });
