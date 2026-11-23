@@ -170,7 +170,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .prep .pk>div{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
 .prep .pk span{display:block;font-size:11.5px;color:var(--muted)}.prep .pk b{font-size:22px}
 .prep .wkwrap{overflow-x:auto;padding-top:10px}
-.prep .wks{display:grid;grid-template-columns:repeat(6,minmax(200px,1fr));gap:8px;min-width:1240px}
+.prep .wks{display:grid;grid-template-columns:repeat(6,minmax(170px,1fr));gap:8px;min-width:1060px}
 .prep .wk{border:1px solid var(--line);border-radius:12px;background:#fff;display:flex;flex-direction:column}
 .prep .wk.now{border:2px solid var(--navy);background:#f6f8ff}.prep .wk.past{background:#fafafa}
 .prep .wh{padding:9px 10px 8px;border-bottom:1px solid var(--line);position:relative}
@@ -778,6 +778,7 @@ details.lv-d summary::-webkit-details-marker{display:none}
   <nav id="nav">
     <button data-v="home" class="on">대시보드</button>
     <button data-v="program">프로그램</button>
+    <button data-v="prep">행사 준비</button>
     <button data-v="crit">초청 기준</button>
     <button data-v="status">초청·공문 현황</button>
     <button data-v="ticket">티켓 현황</button>
@@ -796,10 +797,14 @@ details.lv-d summary::-webkit-details-marker{display:none}
     <div class="banner" id="loadBanner">데이터를 아직 불러오지 못했어요. 연결 상태를 확인해 주세요.</div>
 
     <!-- HOME -->
+    <section class="view" id="v-prep">
+      <h2>행사 준비 현황판</h2>
+      <div class="card prep" id="prepBoard"><div class="empty">행사 준비 현황을 불러오는 중이에요…</div></div>
+    </section>
+
     <section class="view on" id="v-home">
       <h2>대시보드</h2>
       <div class="card rep" id="dailyReport" style="margin-bottom:14px"><div class="empty">일일 초청 현황을 불러오는 중이에요…</div></div>
-      <div class="card prep" id="prepBoard" style="margin-bottom:14px"><div class="empty">행사 준비 현황을 불러오는 중이에요…</div></div>
       <div class="home-top">
         <div class="card invite">
           <a href="assets/invite_vvip.jpg" target="_blank" rel="noopener"><img src="assets/invite_vvip.jpg" alt="WFT26 Summit VVIP 초청장"></a>
@@ -1108,6 +1113,7 @@ function show(v) {
   if (lv) { S.liveTab = lv.t; S.liveLimit = 100000; $("lvTitle").textContent = lv.title; setTimeout(() => { if (typeof liveAuto === "function") liveAuto(); }, 0); }
   if (location.hash !== "#" + v) history.replaceState(null, "", "#" + v);
   if (v === "program" && window.TL_ON && !S.tlEditing) setTimeout(renderTimeline, 0);
+  if (v === "prep") setTimeout(() => { renderPrep(); if (typeof liveLoad === "function" && (!S.live || Date.now() - S.live.at > 60000)) liveLoad(true); }, 0);
   if (v === "gongmun" && !S.live && typeof liveLoad === "function") setTimeout(() => liveLoad(true), 0);
   if (v === "gongmun" && (!S.ledger || Date.now() - S.ledger.readAt > 60000)) setTimeout(() => { if (typeof gmLoadLedgerNo === "function") gmLoadLedgerNo(); }, 0);
 }
@@ -1282,28 +1288,21 @@ function renderPrep() {
   const today = kstToday(), dt = (d) => d ? d.slice(5).replace("-", ".").replace(/^0/, "").replace(/\.0/, ".") : "";
   const stages = []; rows.forEach((x) => { let g = stages.find((y) => y.k === x.stg); if (!g) stages.push(g = { k: x.stg, s: x.s, e: x.e, xs: [] }); g.xs.push(x); if (x.s < g.s) g.s = x.s; if (x.e > g.e) g.e = x.e; });
   let cur = stages.findIndex((g) => g.s <= today && today <= g.e); if (cur < 0) cur = stages.findIndex((g) => g.s > today); if (cur < 0) cur = stages.length - 1;
-  const LC = (() => { try { return JSON.parse(localStorage.getItem("wft26-prep-chk") || "{}"); } catch { return {}; } })();
-  const done = (x) => x.st === "완료" || !!LC[x.no], late = (x) => !done(x) && x.st !== "보류" && x.e < today;
+  const done = (x) => x.st === "완료", late = (x) => !done(x) && x.st !== "보류" && x.e < today;
   const nDone = rows.filter(done).length, nLate = rows.filter(late).length, nIng = rows.filter((x) => x.st === "진행중").length;
   const dd = Math.round((Date.parse("2026-12-15") - Date.parse(today)) / 864e5);
   const badge = (x) => late(x) ? `<span class="st late">${x.st === "진행중" ? "진행중 · " : ""}지연 ${Math.round((Date.parse(today) - Date.parse(x.e)) / 864e5)}일</span>` : x.st !== "대기" && !done(x) ? `<span class="st s-${esc(x.st)}">${esc(x.st)}</span>` : "";
-  const item = (x) => `<div class="ck${done(x) ? " on" : ""}${late(x) ? " lt" : ""}" data-pck="${esc(x.no)}" role="checkbox" aria-checked="${done(x)}" title="눌러서 체크/해제">
-      <span class="bx">${done(x) ? "✓" : ""}</span><span class="tx"><span class="ft">${esc(x.f)}</span>${esc(x.t)}${x.who || x.note || badge(x) ? `<span class="sub">${badge(x)}${x.who ? "👤 " + esc(x.who) + " " : ""}${x.note ? esc(x.note) : ""}</span>` : ""}</span></div>`;
+  const link = (x) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301&range=H${x.row}`;
+  const item = (x) => `<a class="ck${done(x) ? " on" : ""}${late(x) ? " lt" : ""}" href="${link(x)}" target="_blank" rel="noopener" title="누르면 구글 시트에서 이 줄의 상태 칸이 열려요. 「완료」로 바꾸면 모두에게 체크돼요.">
+      <span class="bx">${done(x) ? "✓" : ""}</span><span class="tx"><span class="ft">${esc(x.f)}</span>${esc(x.t)}${x.who || x.note || badge(x) ? `<span class="sub">${badge(x)}${x.who ? "👤 " + esc(x.who) + " " : ""}${x.note ? esc(x.note) : ""}</span>` : ""}</span></a>`;
   const cols = stages.map((g, i) => { const d = g.xs.filter(done).length, p = Math.round(d / g.xs.length * 100);
     return `<div class="wk${i === cur ? " now" : g.e < today ? " past" : ""}"><div class="wh">${i === cur ? `<span class="tag">현재 단계</span>` : ""}<div class="sn">${esc(g.k)}</div><div class="sd">${dt(g.s)} ~ ${dt(g.e)}</div>
       ${meta[g.k] && meta[g.k].goal ? `<div class="sg2">${esc(meta[g.k].goal)}</div>` : ""}<div class="bar"><i style="width:${p}%"></i></div><div class="sd">완료 ${d} / ${g.xs.length}</div></div>
       <div class="wl">${g.xs.map(item).join("")}</div>${meta[g.k] && meta[g.k].ms ? `<div class="ms">🎯 ${esc(meta[g.k].ms)}</div>` : ""}</div>`; }).join("");
-  el.innerHTML = `<h3>🗓 행사 준비 현황판 <span class="meta">항목을 눌러 체크하세요 · 체크는 이 브라우저에 저장돼요</span>
-      <a class="btn small" style="margin-left:auto" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301" target="_blank" rel="noopener">구글 시트 열기</a></h3>
+  el.innerHTML = `<h3><span class="meta">항목을 누르면 구글 시트가 열려요 — 상태를 「완료」로 바꾸면 모두에게 체크돼요 · 「새로 불러오기」로 반영</span>
+      <a class="btn small" style="margin-left:auto" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301" target="_blank" rel="noopener">시트에서 체크하기</a></h3>
     <div class="pk"><div><span>갈라디너까지</span><b>D-${dd}</b></div><div><span>전체 진행률</span><b>${Math.round(nDone / rows.length * 100)}%</b> <small>완료 ${nDone} / ${rows.length}</small></div><div><span>진행 중</span><b style="color:#1e40af">${nIng}</b></div><div><span>지연</span><b style="color:var(--red)">${nLate}</b></div></div>
     <div class="wkwrap"><div class="wks">${cols}</div></div>`;
-  el.querySelectorAll("[data-pck]").forEach((c) => c.onclick = () => {
-    const k = c.dataset.pck, x = rows.find((y) => y.no === k); if (!x) return;
-    if (x.st === "완료") { toast("구글 시트에서 「완료」로 된 항목이라 시트에서만 해제할 수 있어요."); return; }
-    if (LC[k]) delete LC[k]; else LC[k] = Date.now();
-    try { localStorage.setItem("wft26-prep-chk", JSON.stringify(LC)); } catch {}
-    renderPrep();
-  });
 }
 /* ---------- 일일 초청 현황 보고 (교수님 보고용) ---------- */
 const REP_FIELDS = ["WFT 조직위", "국회", "정부", "지자체", "지방의회", "기업", "학계", "언론･문화계", "국제기구･주한 외교대사"];
@@ -3652,7 +3651,7 @@ async function liveLoad(silent) {
 function liveAuto() {
   if (!S.live || Date.now() - S.live.at > 60000) liveLoad(true); else renderLive();
 }
-setInterval(() => { if (LV_VIEWS[S.view] && !document.hidden && !S.tkSaving && !Object.keys(S.tkPend || {}).length && (!S.live || Date.now() - S.live.at > 120000)) liveLoad(true); }, 30000);
+setInterval(() => { if ((LV_VIEWS[S.view] || S.view === "prep") && !document.hidden && !S.tkSaving && !Object.keys(S.tkPend || {}).length && (!S.live || Date.now() - S.live.at > 120000)) liveLoad(true); }, 30000);
 $("lvReload").onclick = () => liveLoad(false);
 
 function lvSummary(L) {
