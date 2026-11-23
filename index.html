@@ -155,6 +155,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .rep .kpi{display:flex;margin:12px 0 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .rep .kpi div{flex:1;padding:8px 14px;border-left:1px solid var(--line)}.rep .kpi div:first-child{border-left:0;padding-left:2px}
 .rep .kpi span{display:block;font-size:11px;color:var(--muted)}.rep .kpi b{font-size:22px;font-weight:800}.rep .kpi small{color:var(--muted);margin-left:4px;font-size:12px}
+@media (max-width:700px){.rep .kpi div{padding:6px 6px;min-width:0}.rep .kpi div:first-child{padding-left:2px}.rep .kpi span{font-size:10.5px;white-space:nowrap;letter-spacing:-.4px;overflow:hidden;text-overflow:ellipsis}.rep .kpi b{font-size:19px;white-space:nowrap}.rep .kpi small{display:block;margin-left:0;font-size:10px;white-space:nowrap}
+.prep .pk span{white-space:nowrap;letter-spacing:-.4px}.prep .pk small{white-space:nowrap}}
 .rep .pl{display:flex;gap:8px;align-items:baseline;margin:4px 0;font-size:13px;line-height:1.7}
 .rep .pg{flex:none;width:44px;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.02em}
 .rep .pns{display:inline;min-width:0}.rep .pl .pns{flex:1;display:flex;flex-wrap:wrap;gap:0 12px}.rep .dgrid4{grid-template-columns:repeat(4,minmax(0,1fr)) !important}.rep .pn{white-space:nowrap;display:inline-block}
@@ -170,15 +172,20 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .prep .pk>div{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
 .prep .pk span{display:block;font-size:11.5px;color:var(--muted)}.prep .pk b{font-size:22px}
 .prep .wkwrap{overflow-x:auto;padding-top:10px}
-.prep .wks{display:grid;grid-template-columns:repeat(6,minmax(170px,1fr));gap:8px;min-width:1060px}
-.prep .wk{border:1px solid var(--line);border-radius:12px;background:#fff;display:flex;flex-direction:column}
-.prep .wk.now{border:2px solid var(--navy);background:#f6f8ff}.prep .wk.past{background:#fafafa}
-.prep .wh{padding:9px 10px 8px;border-bottom:1px solid var(--line);position:relative}
-.prep .wh .sn{font-weight:800;font-size:13px}.prep .sd{color:var(--muted);font-size:11px}
-.prep .wh .sg2{font-size:11.5px;color:#333;margin-top:3px;line-height:1.35}
+.prep .pmx{border-collapse:separate;border-spacing:0;width:100%;min-width:1180px;table-layout:fixed}
+.prep .pmx th,.prep .pmx td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top;text-align:left;background:#fff}
+.prep .pmx tr>*:first-child{border-left:1px solid var(--line)}.prep .pmx thead th{border-top:1px solid var(--line);position:relative;font-weight:400}
+.prep .pmx .fh{width:118px;background:#f3f4f8;font-size:12px;font-weight:700;color:var(--navy);vertical-align:middle}
+.prep .pmx thead .fh{text-align:center}
+.prep .pmx .now{background:#f4f7ff}.prep .pmx thead th.now{box-shadow:inset 0 3px 0 var(--navy)}.prep .pmx .past{background:#fbfbfb}
+.prep .pmx .sn{font-weight:800;font-size:12.5px}.prep .pmx .sg2{font-size:11px;color:#333;margin-top:2px;line-height:1.35}
+.prep .pmx .tag{position:absolute;top:-9px;right:6px;background:var(--navy);color:#fff;font-size:10.5px;padding:1px 7px;border-radius:999px}
+.prep .pmx .msr td{font-size:11px;color:#444;background:#fbfbfd}.prep .pmx .msr .fh{font-size:11px}
+.prep .dash{color:#c3c7cf;display:block;text-align:center;padding:4px 0}
+.prep .pmob{display:none}
+.prep .pmx .ck .ft,.prep .pmob .ck .ft{display:none}.prep .pmob .ck:first-of-type{border-top:0}
+.prep .sd{color:var(--muted);font-size:11px}
 .prep .bar{height:6px;background:#e5e7eb;border-radius:3px;margin:6px 0 3px;overflow:hidden}.prep .bar i{display:block;height:100%;background:#16a34a}
-.prep .wh .tag{position:absolute;top:-10px;right:8px;background:var(--navy);color:#fff;font-size:10.5px;padding:1px 7px;border-radius:999px}
-.prep .wl{padding:4px 8px;flex:1}
 .prep .ck{display:flex;gap:7px;align-items:flex-start;padding:6px 2px;border-top:1px dashed var(--line);font-size:12.2px;line-height:1.4;color:inherit;text-decoration:none}
 .prep .ck{cursor:pointer;user-select:none}.prep .ck:first-child{border-top:0}.prep .ck:hover{background:#f3f4f6}
 .prep .ck .bx{flex:none;width:16px;height:16px;border:1.6px solid #9ca3af;border-radius:4px;margin-top:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff}
@@ -199,10 +206,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .prep .wtabs button.cur{border-color:var(--navy)}
 .prep .wtabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}.prep .wtabs button.on small{color:#cbd5e1}
 .prep .wtabs .lt{color:#dc2626;font-size:9px;vertical-align:middle}
-.prep .wkwrap{overflow:visible;padding-top:4px}
-.prep .wks{display:block;min-width:0}
-.prep .wk{display:none}.prep .wk.sel{display:flex}
-.prep .wh .tag{top:-9px}
+.prep .wkwrap{display:none}
+.prep .pmob{display:block;border:2px solid var(--navy);border-radius:12px;background:#fff;overflow:hidden}
+.prep .pmob .mh{padding:10px 12px;border-bottom:1px solid var(--line);background:#f4f7ff;position:relative}
+.prep .pmob .mh .tag{display:none}
+.prep .pmob .sn{font-weight:800;font-size:14px}.prep .pmob .sg2{font-size:12px;margin-top:2px}
+.prep .pmob .mf{padding:6px 12px 4px;border-bottom:1px solid var(--line)}
+.prep .pmob .mfh{font-size:11.5px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.prep .pmob .dash{text-align:left;padding:2px 0 4px}
 .prep .ck{font-size:13.5px;padding:9px 2px;gap:9px}.prep .ck .bx{width:20px;height:20px;margin-top:0}
 .prep .ck .ft{font-size:11px}.prep .ck .sub{font-size:11.5px}
 }
@@ -1314,14 +1325,22 @@ function renderPrep() {
   const sel = S.prepSel != null && S.prepSel < stages.length ? S.prepSel : cur;
   const tabs = `<div class="wtabs">${stages.map((g, i) => { const d = g.xs.filter(done).length, lt = g.xs.filter(late).length;
     return `<button data-pst="${i}" class="${i === sel ? "on" : ""}${i === cur ? " cur" : ""}">${esc(g.k)} <small>${d}/${g.xs.length}</small>${lt ? ` <b class="lt">●</b>` : ""}</button>`; }).join("")}</div>`;
-  const cols = stages.map((g, i) => { const d = g.xs.filter(done).length, p = Math.round(d / g.xs.length * 100);
-    return `<div class="wk${i === cur ? " now" : g.e < today ? " past" : ""}${i === sel ? " sel" : ""}"><div class="wh">${i === cur ? `<span class="tag">현재 단계</span>` : ""}<div class="sn">${esc(g.k)}</div><div class="sd">${dt(g.s)} ~ ${dt(g.e)}</div>
-      ${meta[g.k] && meta[g.k].goal ? `<div class="sg2">${esc(meta[g.k].goal)}</div>` : ""}<div class="bar"><i style="width:${p}%"></i></div><div class="sd">완료 ${d} / ${g.xs.length}</div></div>
-      <div class="wl">${g.xs.map(item).join("")}</div>${meta[g.k] && meta[g.k].ms ? `<div class="ms">🎯 ${esc(meta[g.k].ms)}</div>` : ""}</div>`; }).join("");
+  const FO = ["초청·참석자 관리", "연사·프로그램", "홍보·제작물", "오프닝 영상", "개막식·선언 퍼포먼스", "갈라디너·오찬(식음)", "행사장·현장 운영"];
+  const fields = [...FO.filter((f) => rows.some((x) => x.f === f)), ...[...new Set(rows.map((x) => x.f))].filter((f) => !FO.includes(f))];
+  const dash = `<span class="dash">—</span>`;
+  const cell = (g, f) => { const xs = g.xs.filter((x) => x.f === f); return xs.length ? xs.map(item).join("") : dash; };
+  const head = (g, i) => { const d = g.xs.filter(done).length, p = Math.round(d / g.xs.length * 100);
+    return `${i === cur ? `<span class="tag">현재 단계</span>` : ""}<div class="sn">${esc(g.k)}</div><div class="sd">${dt(g.s)} ~ ${dt(g.e)}</div>${meta[g.k] && meta[g.k].goal ? `<div class="sg2">${esc(meta[g.k].goal)}</div>` : ""}<div class="bar"><i style="width:${p}%"></i></div><div class="sd">완료 ${d} / ${g.xs.length}</div>`; };
+  const cls = (i) => (i === cur ? "now" : stages[i].e < today ? "past" : "");
+  const table = `<div class="wkwrap"><table class="pmx"><thead><tr><th class="fh">분야</th>${stages.map((g, i) => `<th class="${cls(i)}">${head(g, i)}</th>`).join("")}</tr></thead><tbody>
+    ${fields.map((f) => `<tr><th class="fh">${esc(f)}</th>${stages.map((g, i) => `<td class="${cls(i)}">${cell(g, f)}</td>`).join("")}</tr>`).join("")}
+    <tr class="msr"><th class="fh">핵심 마일스톤</th>${stages.map((g, i) => `<td class="${cls(i)}">${meta[g.k] && meta[g.k].ms ? "🎯 " + esc(meta[g.k].ms) : ""}</td>`).join("")}</tr></tbody></table></div>`;
+  const G = stages[sel];
+  const mob = `<div class="pmob"><div class="mh">${head(G, sel)}</div>${fields.map((f) => `<div class="mf"><div class="mfh">${esc(f)}</div>${cell(G, f)}</div>`).join("")}${meta[G.k] && meta[G.k].ms ? `<div class="ms">🎯 ${esc(meta[G.k].ms)}</div>` : ""}</div>`;
   el.innerHTML = `<h3><span class="meta">항목을 누르면 구글 시트가 열려요 — 상태를 「완료」로 바꾸면 모두에게 체크돼요 · 「새로 불러오기」로 반영</span>
       <a class="btn small" style="margin-left:auto" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=26112301" target="_blank" rel="noopener">시트에서 체크하기</a></h3>
     <div class="pk"><div><span>갈라디너까지</span><b>D-${dd}</b></div><div><span>전체 진행률</span><b>${Math.round(nDone / rows.length * 100)}%</b> <small>완료 ${nDone} / ${rows.length}</small></div><div><span>진행 중</span><b style="color:#1e40af">${nIng}</b></div><div><span>지연</span><b style="color:var(--red)">${nLate}</b></div></div>
-    ${tabs}<div class="wkwrap"><div class="wks">${cols}</div></div>`;
+    ${tabs}${table}${mob}`;
   el.querySelectorAll("[data-pst]").forEach((b) => b.onclick = () => { S.prepSel = +b.dataset.pst; renderPrep(); });
   const ton = el.querySelector(".wtabs .on"); if (ton) ton.parentNode.scrollLeft = Math.max(0, ton.offsetLeft - ton.parentNode.offsetLeft - 12);
 }
