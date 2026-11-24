@@ -4181,20 +4181,18 @@ function lvRenderSum(L) {
   const sentList = (g) => {
     const groups = grid.map((r) => ({ f: r.f, list: L.M.filter((m) => m.grade === g && m.sent === "발송완료" && (m.field || LV_NOFIELD) === r.f) })).filter((x) => x.list.length);
     if (!groups.length) return `<div class="empty">아직 없어요.</div>`;
-    return groups.map((x) => `<details class="lv-d" open><summary class="lv-grp">▍${esc(x.f)} · ${x.list.length}명</summary><div class="lv-mini">${x.list.map((m) => `<div class="r"><span class="x">${esc(m.sentDate)}</span><span><b>${esc(m.name)}</b> <span class="x">${esc(m.title)}</span><br><span class="x">${esc(m.org)}</span></span><span></span></div>`).join("")}</div></details>`).join("");
+    return groups.map((x) => `<details class="lv-d"><summary class="lv-grp">▍${esc(x.f)} · ${x.list.length}명</summary><div class="lv-mini">${x.list.map((m) => `<div class="r"><span class="x">${esc(m.sentDate)}</span><span><b>${esc(m.name)}</b> <span class="x">${esc(m.title)}</span><br><span class="x">${esc(m.org)}</span></span><span></span></div>`).join("")}</div></details>`).join("");
   };
-  const sentL = `<div class="lv-cols"><div><div class="lv-sec">VVIP 공문 발송 리스트 <small>${tot("sVVIP")}명 · 분야를 누르면 접혀요</small></div>${sentList("VVIP")}</div>
-    <div><div class="lv-sec">VIP 공문 발송 리스트 <small>${tot("sVIP")}명</small></div>${sentList("VIP")}</div></div>`;
+  const sentL = `<div class="lv-cols"><div><div class="lv-sec">VVIP <small>${tot("sVVIP")}명</small></div>${sentList("VVIP")}</div>
+    <div><div class="lv-sec">VIP <small>${tot("sVIP")}명</small></div>${sentList("VIP")}</div></div>`;
   const attK = `<div class="lv-kpis">
     ${kpi(cnt((m) => m.attend === "참석확정") + "명", "참석 확정", "")}
     ${kpi(cnt((m) => m.attend === "불참") + "명", "불참", "")}
     ${kpi(d15.length + "명", "15일 갈라디너 참석", "")}
     ${kpi(d16.length + "명", "16일 개막식 참석", "")}
   </div>`;
-  const st = S.sumTab === "sent" ? "sent" : "all";
-  const seg = `<div class="seg lv-seg">${[["all", "초청 명단 요약"], ["sent", "공문 발송 현황"]].map(([k, l]) => `<button data-st="${k}" class="${st === k ? "on" : ""}">${l}</button>`).join("")}</div>`;
-  if (st === "sent") return seg + sentA + sentL;
-  return seg + kpis + tblA;
+  // 위 일일 보고(초청 현황·참석·불참)와 겹치는 요약표·발송률은 빼고, 보고에 없는 「발송한 사람 명단」만 남김
+  return `<div class="card" style="padding:12px 14px"><div class="lv-sec" style="margin-top:0">공문 발송 명단 <small>발송일 포함 · 분야를 누르면 펼쳐져요</small></div>${sentL}</div>`;
 }
 
 function lvFilters(kind, L, rows) {
