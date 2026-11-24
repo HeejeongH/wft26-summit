@@ -4253,11 +4253,12 @@ function lvFindM(L, h) {
   return L._mIdx.byKey[nk + "|" + normOrg(h.org)] || ((L._mIdx.byName[nk] || []).length === 1 ? L._mIdx.byName[nk][0] : null);
 }
 function lvMasterCells(m, idx) {
-  const mk = idx != null ? `<div style="margin-top:4px"><button class="btn small" data-lgh="${idx}">공문 작성</button></div>` : "";
+  // 발송완료가 아니면 상태 칩을 누르면 공문 작성으로 넘어감 (따로 「공문 작성」 버튼은 두지 않음)
+  const go = (label) => idx != null ? `<button class="chip" data-lgh="${idx}" title="눌러서 공문 작성" style="cursor:pointer;border:0;font:inherit">${esc(label)} ›</button>` : `<span class="chip">${esc(label)}</span>`;
   const day = (v) => v ? `<span class="chip ${v === "참석" ? "green" : v === "불참" ? "red" : ""}">${esc(v)}</span>` : `<span style="color:#b6bccb">-</span>`;
-  if (!m) return `<td class="mc"><span style="color:#b6bccb">-</span>${mk}</td><td class="mc">${day("")}</td><td class="mc">${day("")}</td>`;
-  const sent = m.sent === "발송완료" ? `<span class="chip green">발송완료</span>${m.sentDate ? `<div class="sd">${esc(m.sentDate)}</div>` : ""}` : `<span class="chip">${esc(m.sent || "미발송")}</span>`;
-  return `<td class="mc">${sent}${mk}</td><td class="mc">${day(m.days[0] && m.days[0].v)}</td><td class="mc">${day(m.days[1] && m.days[1].v)}</td>`;
+  if (!m) return `<td class="mc">${idx != null ? go("미발송") : `<span style="color:#b6bccb">-</span>`}</td><td class="mc">${day("")}</td><td class="mc">${day("")}</td>`;
+  const sent = m.sent === "발송완료" ? `<span class="chip green">발송완료</span>${m.sentDate ? `<div class="sd">${esc(m.sentDate)}</div>` : ""}` : go(m.sent || "미발송");
+  return `<td class="mc">${sent}</td><td class="mc">${day(m.days[0] && m.days[0].v)}</td><td class="mc">${day(m.days[1] && m.days[1].v)}</td>`;
 }
 function lvRenderHwp(L) {
   const list = lvApply("h", L.H);
