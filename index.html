@@ -729,7 +729,8 @@ details.lv-d summary::-webkit-details-marker{display:none}
 .seat-list li{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
 .seat-list .no{width:22px;color:var(--muted);text-align:right}
 .seat-list .dot{width:10px;height:10px;border-radius:50%;flex:none}
-.seat-list .org{color:var(--muted);font-size:12px;margin-left:auto;text-align:right}
+.seat-list .org{color:var(--muted);font-size:12px;margin-left:auto;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.seat-list b{flex:none;white-space:nowrap}
 .seat-legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--muted);margin:8px 2px}
 .seat-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 .seat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:16px}
@@ -1437,9 +1438,9 @@ function renderSeat() {
       const seen = new Set(), ppl = [];
       att.forEach((m) => { const k = normName(m.n); if (seen.has(k)) return; seen.add(k); ppl.push({ n: m.n, o: [m.o, m.t].filter(Boolean).join(" "), g: m.g, tb: at[k] || "" }); });
       rows.forEach((r) => { const k = normName(r[3]); if (seen.has(k)) return; seen.add(k); ppl.push({ n: r[3], o: r[4], g: r[5], tb: at[k] }); });
-      return `<h3>전체 명단 <span style="color:var(--muted);font-weight:400;font-size:13px">${ppl.length}명</span></h3><div style="max-height:640px;overflow:auto"><table class="seat-all" style="width:100%;border-collapse:collapse;font-size:13px">` +
+      return `<h3>전체 명단 <span style="color:var(--muted);font-weight:400;font-size:13px">${ppl.length}명</span></h3><div style="max-height:640px;overflow:auto"><table class="seat-all" style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed"><colgroup><col style="width:96px"><col><col style="width:56px"></colgroup>` +
         `<tr style="position:sticky;top:0;background:#fff"><th style="text-align:left;padding:4px 6px">성명</th><th style="text-align:left;padding:4px 6px">소속</th><th style="padding:4px 6px;width:56px">테이블</th></tr>` +
-        ppl.map((p) => `<tr style="border-top:1px solid #eef0f4"><td style="padding:4px 6px;white-space:nowrap"><span style="color:${SEAT_GC[seatGK(p.g)]}">●</span> ${esc(p.n)}</td><td style="padding:4px 6px;color:var(--muted)">${esc(p.o || "")}</td><td style="padding:4px 6px;text-align:center;font-weight:700">${esc(p.tb || "")}</td></tr>`).join("") + `</table></div>`;
+        ppl.map((p) => `<tr style="border-top:1px solid #eef0f4"><td style="padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.n)}"><span style="color:${SEAT_GC[seatGK(p.g)]}">●</span> ${esc(p.n)}</td><td style="padding:4px 6px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.o || "")}">${esc(p.o || "")}</td><td style="padding:4px 6px;text-align:center;font-weight:700">${esc(p.tb || "")}</td></tr>`).join("") + `</table></div>`;
     }
     const st = T[sel] || {};
     return `<h3>${sel}번 테이블 <span style="color:var(--muted);font-weight:400;font-size:13px">${Object.keys(st).length}/8명</span></h3><ul class="seat-list">` +
