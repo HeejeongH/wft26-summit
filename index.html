@@ -1373,7 +1373,7 @@ $("v-home").addEventListener("click", (e) => { const b = e.target.closest("[data
 /* ---------- 행사 준비 현황판 ---------- */
 
 /* ---------- 자리배치 (시트 「자리배치」 탭) ---------- */
-const SEAT_EV = [{ k: "15일 갈라디너", d: 0, label: "12/15 갈라디너 (50석)", base: 4, n: 7, rows: [3, 4] }, { k: "16일 개막식·개막오찬", d: 2, label: "12/16 개막식·개막 오찬", base: 28, n: 20, rows: [5, 5, 5, 5] }, { k: "17일 특별세션·오찬", d: 5, label: "12/17 특별세션·2일차 오찬", base: 72, n: 20, rows: [5, 5, 5, 5] }];
+const SEAT_EV = [{ k: "15일 갈라디너", d: 0, label: "12/15 갈라디너", base: 4, n: 8, rows: [2, 3, 3] }, { k: "16일 개막식·개막오찬", d: 2, label: "12/16 개막식·개막 오찬", base: 38, n: 20, rows: [5, 5, 5, 5] }, { k: "17일 특별세션·오찬", d: 5, label: "12/17 특별세션·2일차 오찬", base: 82, n: 20, rows: [5, 5, 5, 5] }];
 // 시트 「자리배치」는 행사장 모양 그대로 표가 놓인 격자: 행사 제목 행(base), 무대(base+1), 테이블 줄 r의 머리 행 = base+2+10r, 좌석 1~8 = 그 아래 8행, 표 하나 = 4열(성명·소속·직책·여백)
 function seatFromGrid(V, L) {
   const cell = (r, c) => String(((V[r - 1] || [])[c]) ?? "").trim();
@@ -1387,7 +1387,7 @@ function seatFromGrid(V, L) {
 const SEAT_GC = { VVIP: "#b45309", Special_VVIP: "#ea580c", VIP: "#1e40af", Special_VIP: "#0f766e", 실무위원회: "#6b7280", 동행: "#7c3aed", 참가등록: "#94a3b8", 기타: "#94a3b8" };
 const seatGK = (g) => { g = String(g || ""); if (/Special_VVIP|특별.*VVIP/.test(g)) return "Special_VVIP"; if (/Special_VIP|특별/.test(g)) return "Special_VIP"; if (/^VVIP/.test(g)) return "VVIP"; if (/^VIP/.test(g)) return "VIP"; if (/실무/.test(g)) return "실무위원회"; if (/동행/.test(g)) return "동행"; if (/참가|설문/.test(g)) return "참가등록"; return "기타"; };
 S.seatEv = S.seatEv || 0; S.seatSel = S.seatSel || 0;
-// 테이블 번호 → [줄, 칸]. 갈라디너는 앞줄 3·둘째 줄 4, 나머지는 6개씩(마지막 줄 5)
+// 테이블 번호 → [줄, 칸]. 행사마다 rows(줄별 테이블 수)대로
 function seatRC(ev, t) { if (ev.rows) { let r = 0, k = t; while (r < ev.rows.length && k > ev.rows[r]) { k -= ev.rows[r]; r++; } return [r, k - 1]; } return [Math.floor((t - 1) / 6), (t - 1) % 6]; }
 function seatPos(ev) {
   if (ev && ev.rows) { const P = []; ev.rows.forEach((n, r) => { for (let c = 0; c < n; c++) P.push([320 + (c - (n - 1) / 2) * 110, 220 + r * 130]); }); return P; }
@@ -3839,7 +3839,7 @@ async function liveLoad(silent) {
     const call = (range) => mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range }, { cache: false });
     const [a, c, tk] = await Promise.all([call("초청 명단!A8:AI1200"), call("분류기준!A1:K60"), call("티켓 현황!A17:D36").catch(() => null)]);
     let vpr = []; try { vpr = valuesOf(await call("행사 준비!A1:M80")) || []; } catch {}
-    let vst = []; try { vst = valuesOf(await call("자리배치!A1:T120")) || []; } catch {}
+    let vst = []; try { vst = valuesOf(await call("자리배치!A1:T130")) || []; } catch {}
     let vrs = [];
     const KWS = [/오전|AM/i, /오찬|Lunch/i, /오후|PM/i], b01 = (x) => (x ? "1" : "0");
     try { const rr = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: "1k60hEZfW4PRoQDxq4KqvL-n170s4F1ioIlXbRREuki4", range: "설문지 응답 시트1!A2:K1000" }, { cache: false });
