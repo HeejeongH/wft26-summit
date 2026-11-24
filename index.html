@@ -1373,13 +1373,13 @@ $("v-home").addEventListener("click", (e) => { const b = e.target.closest("[data
 /* ---------- 행사 준비 현황판 ---------- */
 
 /* ---------- 자리배치 (시트 「자리배치」 탭) ---------- */
-const SEAT_EV = [{ k: "15일 갈라디너", d: 0, label: "12/15 갈라디너 (50석)", base: 4, n: 7 }, { k: "16일 개막오찬", d: 2, label: "12/16 개막 오찬", base: 28, n: 35 }, { k: "17일 오찬", d: 5, label: "12/17 2일차 오찬", base: 92, n: 35 }];
+const SEAT_EV = [{ k: "15일 갈라디너", d: 0, label: "12/15 갈라디너 (50석)", base: 4, n: 7, rows: [3, 4] }, { k: "16일 개막오찬", d: 2, label: "12/16 개막 오찬", base: 28, n: 35 }, { k: "17일 오찬", d: 5, label: "12/17 2일차 오찬", base: 92, n: 35 }];
 // 시트 「자리배치」는 행사장 모양 그대로 표가 놓인 격자: 행사 제목 행(base), 무대(base+1), 테이블 줄 r의 머리 행 = base+2+10r, 좌석 1~8 = 그 아래 8행, 표 하나 = 4열(성명·소속·직책·여백)
 function seatFromGrid(V, L) {
   const cell = (r, c) => String(((V[r - 1] || [])[c]) ?? "").trim();
   const gOf = {}; ((L && L.M) || []).forEach((m) => { if (m.name) gOf[normName(m.name)] = m.gfull || m.grade || ""; });
   const out = [];
-  SEAT_EV.forEach((ev) => { for (let t = 1; t <= ev.n; t++) { const r = Math.floor((t - 1) / 6), c = (t - 1) % 6, H = ev.base + 2 + 10 * r;
+  SEAT_EV.forEach((ev) => { for (let t = 1; t <= ev.n; t++) { const [r, c] = seatRC(ev, t), H = ev.base + 2 + 10 * r;
     for (let k = 1; k <= 8; k++) { const n = cell(H + k, c * 4); if (!n) continue; const o = [cell(H + k, c * 4 + 1), cell(H + k, c * 4 + 2)].filter(Boolean).join(" ");
       out.push([ev.k, String(t), String(k), n, o, gOf[normName(n)] || "", ""]); } } });
   return out;
@@ -1387,7 +1387,10 @@ function seatFromGrid(V, L) {
 const SEAT_GC = { VVIP: "#b45309", Special_VVIP: "#ea580c", VIP: "#1e40af", Special_VIP: "#0f766e", 실무위원회: "#6b7280", 동행: "#7c3aed", 참가등록: "#94a3b8", 기타: "#94a3b8" };
 const seatGK = (g) => { g = String(g || ""); if (/Special_VVIP|특별.*VVIP/.test(g)) return "Special_VVIP"; if (/Special_VIP|특별/.test(g)) return "Special_VIP"; if (/^VVIP/.test(g)) return "VVIP"; if (/^VIP/.test(g)) return "VIP"; if (/실무/.test(g)) return "실무위원회"; if (/동행/.test(g)) return "동행"; if (/참가|설문/.test(g)) return "참가등록"; return "기타"; };
 S.seatEv = S.seatEv || 0; S.seatSel = S.seatSel || 0;
-function seatPos() {
+// 테이블 번호 → [줄, 칸]. 갈라디너는 앞줄 3·둘째 줄 4, 나머지는 6개씩(마지막 줄 5)
+function seatRC(ev, t) { if (ev.rows) { let r = 0, k = t; while (r < ev.rows.length && k > ev.rows[r]) { k -= ev.rows[r]; r++; } return [r, k - 1]; } return [Math.floor((t - 1) / 6), (t - 1) % 6]; }
+function seatPos(ev) {
+  if (ev && ev.rows) { const P = []; ev.rows.forEach((n, r) => { for (let c = 0; c < n; c++) P.push([320 + (c - (n - 1) / 2) * 110, 220 + r * 130]); }); return P; }
   const P = [], xs6 = [84, 178, 272, 366, 460, 554], xs5 = [131, 225, 319, 413, 507];
   for (let r = 0; r < 5; r++) xs6.forEach((x) => P.push([x, 200 + r * 104]));
   xs5.forEach((x) => P.push([x, 720]));
@@ -1405,7 +1408,7 @@ function renderSeat() {
   const asg = new Set(rows.map((r) => normName(r[3])));
   const un = att.filter((m) => !asg.has(normName(m.n)));
   const need = Math.ceil(att.length / 8);
-  const pos = seatPos().slice(0, ev.n);
+  const pos = seatPos(ev).slice(0, ev.n);
   const sel = S.seatSel;
   let svg = `<svg viewBox="0 0 640 800" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
     <path d="M40 120 L40 70 Q320 18 600 70 L600 120 L620 120 L620 790 L20 790 L20 120 Z" fill="#fff" stroke="#c9cfdb" stroke-width="2"/>
