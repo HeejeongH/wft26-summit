@@ -1436,7 +1436,7 @@ function renderSeat() {
     if (!sel) {
       const at = {}; rows.forEach((r) => { at[normName(r[3])] = r[1] + "-" + r[2]; });
       const seen = new Set(), ppl = [];
-      att.forEach((m) => { const k = normName(m.n); if (seen.has(k)) return; seen.add(k); ppl.push({ n: m.n, o: [m.o, m.t].filter(Boolean).join(" "), g: m.g, tb: at[k] || "" }); });
+      att.forEach((m) => { const k = normName(m.n) || "#" + m.n + "|" + m.o; if (seen.has(k)) return; seen.add(k); ppl.push({ n: m.n, o: [m.o, m.t].filter(Boolean).join(" "), g: m.g, tb: at[k] || "" }); });
       rows.forEach((r) => { const k = normName(r[3]); if (seen.has(k)) return; seen.add(k); ppl.push({ n: r[3], o: r[4], g: r[5], tb: at[k] }); });
       return `<h3>전체 명단 <span style="color:var(--muted);font-weight:400;font-size:13px">${ppl.length}명</span></h3><div style="max-height:640px;overflow:auto"><table class="seat-all" style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed"><colgroup><col style="width:96px"><col><col style="width:56px"></colgroup>` +
         `<tr style="position:sticky;top:0;background:#fff"><th style="text-align:left;padding:4px 6px">성명</th><th style="text-align:left;padding:4px 6px">소속</th><th style="padding:4px 6px;width:56px">테이블</th></tr>` +
@@ -3926,13 +3926,14 @@ const tkPack = (L) => {
     let bits = r[3] || "";
     if (r[6]) { const h = L.M.find((m) => normName(m.name) === normName(r[5])); bits = h ? [0, 1, 2, 3, 4, 5, 6].map((k) => (h.days[k] && h.days[k].v === "참석" ? "1" : "0")).join("") : "0000000"; }
     if (!/1/.test(bits)) return;
-    let x = P.find((q) => normName(q.n) === normName(r[0]));
+    // 이름이 괄호뿐인 사람(「(미정)」, 「(이름 미정 #6)」)은 이름 비교가 빈 값이 되니 합치지 않고 따로 넣음
+    const rk = normName(r[0]); let x = rk ? P.find((q) => normName(q.n) === rk) : null;
     if (!x) { x = { n: r[0], o: r[1], t: r[2], g: r[4] || "", d: "0000000" }; P.push(x); }
     x.d = x.d.split("").map((c, k) => (c === "1" || bits[k] === "1" ? "1" : "0")).join("");
   });
   // 시트 「전체 참석 명단」 탭에서 '뺄 사람'으로 고른 이름은 테이블(티켓) 집계에서 제외
   const exs = (L.ex || []).map(normName);
-  return { at: L.at, tk: L.tk || [], P: P.filter((x) => /1/.test(x.d)).map((x) => (exs.indexOf(normName(x.n)) >= 0 ? { ...x, ex: 1 } : x)) };
+  return { at: L.at, tk: L.tk || [], P: P.filter((x) => /1/.test(x.d)).map((x) => (normName(x.n) && exs.indexOf(normName(x.n)) >= 0 ? { ...x, ex: 1 } : x)) };
 };
 const TK_GB = ["VVIP", "VIP", "Special", "실무위원회", "실무진", "기타"];
 S.tkStaff = S.tkStaff || "제외";
