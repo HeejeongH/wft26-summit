@@ -1373,28 +1373,26 @@ $("v-home").addEventListener("click", (e) => { const b = e.target.closest("[data
 /* ---------- 행사 준비 현황판 ---------- */
 
 /* ---------- 자리배치 (시트 「자리배치」 탭) ---------- */
-const SEAT_EV = [{ k: "15일 갈라디너", d: 0, label: "12/15 갈라디너", base: 4, n: 8, rows: [2, 3, 3] }, { k: "16일 개막식·개막오찬", d: 2, label: "12/16 개막식·개막 오찬", base: 38, n: 20, rows: [5, 5, 5, 5] }, { k: "17일 특별세션·오찬", d: 5, label: "12/17 특별세션·2일차 오찬", base: 82, n: 20, rows: [5, 5, 5, 5] }];
+const SEAT_EV = [{ k: "15일 갈라디너", d: 0, label: "12/15 갈라디너", base: 4, grid: [["1", "2"], ["3", "4", "5"], ["6", "7", "8"]] }, { k: "16일 개막식·개막오찬", d: 2, label: "12/16 개막식·개막 오찬", base: 38, grid: [[null, "1", "H1", "H2", "2", null], ["7", "5", "3", "4", "6", "8"], ["13", "11", "9", "10", "12", "14"], ["19", "17", "15", "16", "18", "20"]] }, { k: "17일 특별세션·오찬", d: 5, label: "12/17 특별세션·2일차 오찬", base: 82, grid: [[null, "1", "H1", "H2", "2", null], ["7", "5", "3", "4", "6", "8"], ["13", "11", "9", "10", "12", "14"], ["19", "17", "15", "16", "18", "20"]] }];
 // 시트 「자리배치」는 행사장 모양 그대로 표가 놓인 격자: 행사 제목 행(base), 무대(base+1), 테이블 줄 r의 머리 행 = base+2+10r, 좌석 1~8 = 그 아래 8행, 표 하나 = 4열(성명·소속·직책·여백)
 function seatFromGrid(V, L) {
   const cell = (r, c) => String(((V[r - 1] || [])[c]) ?? "").trim();
   const gOf = {}; ((L && L.M) || []).forEach((m) => { if (m.name) gOf[normName(m.name)] = m.gfull || m.grade || ""; });
   const out = [];
-  SEAT_EV.forEach((ev) => { for (let t = 1; t <= ev.n; t++) { const [r, c] = seatRC(ev, t), H = ev.base + 2 + 10 * r;
+  SEAT_EV.forEach((ev) => ev.grid.forEach((row, r) => row.forEach((t, c) => { if (!t) return; const H = ev.base + 2 + 10 * r;
     for (let k = 1; k <= 8; k++) { const n = cell(H + k, c * 4); if (!n) continue; const o = [cell(H + k, c * 4 + 1), cell(H + k, c * 4 + 2)].filter(Boolean).join(" ");
-      out.push([ev.k, String(t), String(k), n, o, gOf[normName(n)] || "", ""]); } } });
+      out.push([ev.k, t, String(k), n, o, gOf[normName(n)] || "", ""]); } })));
   return out;
 }
 const SEAT_GC = { VVIP: "#b45309", Special_VVIP: "#ea580c", VIP: "#1e40af", Special_VIP: "#0f766e", 실무위원회: "#6b7280", 동행: "#7c3aed", 참가등록: "#94a3b8", 기타: "#94a3b8" };
 const seatGK = (g) => { g = String(g || ""); if (/Special_VVIP|특별.*VVIP/.test(g)) return "Special_VVIP"; if (/Special_VIP|특별/.test(g)) return "Special_VIP"; if (/^VVIP/.test(g)) return "VVIP"; if (/^VIP/.test(g)) return "VIP"; if (/실무/.test(g)) return "실무위원회"; if (/동행/.test(g)) return "동행"; if (/참가|설문/.test(g)) return "참가등록"; return "기타"; };
 S.seatEv = S.seatEv || 0; S.seatSel = S.seatSel || 0;
-// 테이블 번호 → [줄, 칸]. 행사마다 rows(줄별 테이블 수)대로
-function seatRC(ev, t) { if (ev.rows) { let r = 0, k = t; while (r < ev.rows.length && k > ev.rows[r]) { k -= ev.rows[r]; r++; } return [r, k - 1]; } return [Math.floor((t - 1) / 6), (t - 1) % 6]; }
-function seatPos(ev) {
-  if (ev && ev.rows) { const P = []; ev.rows.forEach((n, r) => { for (let c = 0; c < n; c++) P.push([320 + (c - (n - 1) / 2) * 110, 220 + r * 130]); }); return P; }
-  const P = [], xs6 = [84, 178, 272, 366, 460, 554], xs5 = [131, 225, 319, 413, 507];
-  for (let r = 0; r < 5; r++) xs6.forEach((x) => P.push([x, 200 + r * 104]));
-  xs5.forEach((x) => P.push([x, 720]));
-  return P;
+// 그림 위치: 줄마다 있는 테이블을 가운데 정렬. 목록 순서는 1, H1, H2, 2, 3 … (번호 순)
+const seatKey = (t) => (/^H(\d+)$/.test(t) ? 1 + RegExp.$1 / 10 : +t);
+function seatTables(ev) {
+  const out = []; ev.grid.forEach((row, r) => { const ts = row.map((t, c) => [t, c]).filter(([t]) => t), n = row.length, gap = n <= 3 ? 110 : 94;
+    ts.forEach(([t, c]) => out.push({ t, x: Math.round(320 + (c - (n - 1) / 2) * gap), y: 210 + r * 128 })); });
+  return out;
 }
 function renderSeat() {
   const el = $("seatBoard"); if (!el) return;
@@ -1402,24 +1400,24 @@ function renderSeat() {
   if (!L) { el.innerHTML = `<div class="empty">구글 시트를 불러오는 중이에요…</div>`; return; }
   const ev = SEAT_EV[S.seatEv] || SEAT_EV[0];
   const rows = (L.seat || []).filter((r) => r[0] === ev.k && r[3]);
-  const T = {}; rows.forEach((r) => { const t = +r[1], k = +r[2]; if (!t || !k) return; (T[t] = T[t] || {})[k] = { n: r[3], o: r[4] || "", g: r[5] || "", m: r[6] || "" }; });
+  const T = {}; rows.forEach((r) => { const t = String(r[1]), k = +r[2]; if (!t || !k) return; (T[t] = T[t] || {})[k] = { n: r[3], o: r[4] || "", g: r[5] || "", m: r[6] || "" }; });
   let P = []; try { P = tkPack(L).P || []; } catch (e) {}
   const att = P.filter((m) => !m.ex && m.d && m.d[ev.d] === "1");
   const asg = new Set(rows.map((r) => normName(r[3])));
   const un = att.filter((m) => !asg.has(normName(m.n)));
   const need = Math.ceil(att.length / 8);
-  const pos = seatPos(ev).slice(0, ev.n);
+  const tabs = seatTables(ev), order = tabs.map((x) => x.t).sort((p, q) => seatKey(p) - seatKey(q));
   const sel = S.seatSel;
   let svg = `<svg viewBox="0 0 640 800" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
     <path d="M40 120 L40 70 Q320 18 600 70 L600 120 L620 120 L620 790 L20 790 L20 120 Z" fill="#fff" stroke="#c9cfdb" stroke-width="2"/>
     <rect x="215" y="62" width="210" height="52" rx="4" fill="#16224a"/><text x="320" y="93" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">STAGE</text>
     <rect x="120" y="70" width="70" height="10" fill="#94a3b8"/><text x="155" y="98" text-anchor="middle" font-size="10" fill="#6b7389">SCREEN</text>
     <rect x="450" y="70" width="70" height="10" fill="#94a3b8"/><text x="485" y="98" text-anchor="middle" font-size="10" fill="#6b7389">SCREEN</text>
-    <text x="320" y="138" text-anchor="middle" font-size="11" fill="#6b7389">Grand Ballroom · ${ev.n} tables × 8 seats</text>
+    <text x="320" y="138" text-anchor="middle" font-size="11" fill="#6b7389">Grand Ballroom · ${tabs.length} tables × 8 seats</text>
     <text x="320" y="782" text-anchor="middle" font-size="11" fill="#6b7389">▲ 입구 (Lobby)</text>`;
-  pos.forEach(([x, y], i) => {
-    const t = i + 1, st = T[t] || {}, cnt = Object.keys(st).length;
-    const used = cnt > 0 || t <= need;
+  tabs.forEach(({ t, x, y }) => {
+    const st = T[t] || {}, cnt = Object.keys(st).length;
+    const used = cnt > 0 || order.indexOf(t) < need;
     svg += `<g class="tb${sel === t ? " sel" : ""}" data-st="${t}" opacity="${used ? 1 : 0.38}"><title>${t}번 테이블 · ${cnt}/8명</title>`;
     for (let k = 1; k <= 8; k++) {
       const a = (-90 + (k - 1) * 45) * Math.PI / 180, sx = x + 34 * Math.cos(a), sy = y + 34 * Math.sin(a), p = st[k];
@@ -1427,40 +1425,35 @@ function renderSeat() {
                : `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="6" fill="#fff" stroke="#cfd5e1" stroke-width="1.2"><title>${t}-${k} 빈 자리</title></circle>`;
     }
     svg += `<circle class="t" cx="${x}" cy="${y}" r="24" fill="#fff" stroke="${cnt ? "#16224a" : "#cfd5e1"}" stroke-width="${cnt ? 1.8 : 1.2}"/>
-      <text x="${x}" y="${y + 1}" text-anchor="middle" font-size="15" font-weight="700" fill="#16224a">${t}</text>
+      <text x="${x}" y="${y + 1}" text-anchor="middle" font-size="${t.length > 2 ? 12 : 15}" font-weight="700" fill="#16224a">${t}</text>
       <text x="${x}" y="${y + 15}" text-anchor="middle" font-size="9.5" fill="${cnt === 8 ? "#047857" : "#6b7389"}">${cnt}/8</text></g>`;
   });
   svg += `</svg>`;
   const lg = Object.entries({ VVIP: "VVIP", Special_VVIP: "Special VVIP", VIP: "VIP", Special_VIP: "Special VIP", 실무위원회: "실무위원회", 동행: "동행", 참가등록: "참가등록·기타" })
     .map(([k, v]) => `<span><i style="background:${SEAT_GC[k]}"></i>${v}</span>`).join("") + `<span><i style="background:#fff;border:1px solid #cfd5e1"></i>빈 자리</span>`;
   const side = (() => {
-    if (!sel) return `<h3>테이블을 눌러 보세요</h3><div class="seat-note">그림에서 테이블을 누르면 여기 좌석 1~8번 명단이 보여요. 좌석 1번은 무대 쪽(12시 방향), 시계 방향으로 2~8번이에요.</div>`;
+    if (!sel) {
+      const at = {}; rows.forEach((r) => { at[normName(r[3])] = r[1] + "-" + r[2]; });
+      const seen = new Set(), ppl = [];
+      att.forEach((m) => { const k = normName(m.n); if (seen.has(k)) return; seen.add(k); ppl.push({ n: m.n, o: [m.o, m.t].filter(Boolean).join(" "), g: m.g, tb: at[k] || "" }); });
+      rows.forEach((r) => { const k = normName(r[3]); if (seen.has(k)) return; seen.add(k); ppl.push({ n: r[3], o: r[4], g: r[5], tb: at[k] }); });
+      return `<h3>전체 명단 <span style="color:var(--muted);font-weight:400;font-size:13px">${ppl.length}명</span></h3><div style="max-height:640px;overflow:auto"><table class="seat-all" style="width:100%;border-collapse:collapse;font-size:13px">` +
+        `<tr style="position:sticky;top:0;background:#fff"><th style="text-align:left;padding:4px 6px">성명</th><th style="text-align:left;padding:4px 6px">소속</th><th style="padding:4px 6px;width:56px">테이블</th></tr>` +
+        ppl.map((p) => `<tr style="border-top:1px solid #eef0f4"><td style="padding:4px 6px;white-space:nowrap"><span style="color:${SEAT_GC[seatGK(p.g)]}">●</span> ${esc(p.n)}</td><td style="padding:4px 6px;color:var(--muted)">${esc(p.o || "")}</td><td style="padding:4px 6px;text-align:center;font-weight:700">${esc(p.tb || "")}</td></tr>`).join("") + `</table></div>`;
+    }
     const st = T[sel] || {};
     return `<h3>${sel}번 테이블 <span style="color:var(--muted);font-weight:400;font-size:13px">${Object.keys(st).length}/8명</span></h3><ul class="seat-list">` +
       [1, 2, 3, 4, 5, 6, 7, 8].map((k) => { const p = st[k]; return p ? `<li><span class="no">${k}</span><span class="dot" style="background:${SEAT_GC[seatGK(p.g)]}"></span><b>${esc(p.n)}</b><span class="org">${esc(p.o)}${p.m ? "<br>" + esc(p.m) : ""}</span></li>` : `<li><span class="no">${k}</span><span class="dot" style="border:1px solid #cfd5e1"></span><span style="color:#c3c8d4">빈 자리</span></li>`; }).join("") + `</ul>`;
   })();
-  const maxT = Math.max(need, ...Object.keys(T).map(Number), 0);
-  const cards = Array.from({ length: Math.min(ev.n, maxT) }, (_, i) => i + 1).map((t) => {
-    const st = T[t] || {};
-    return `<div class="seat-card${sel === t ? " sel" : ""}" data-st="${t}"><h4>${t}번 테이블 <span>${Object.keys(st).length}/8</span></h4>` +
-      [1, 2, 3, 4, 5, 6, 7, 8].map((k) => { const p = st[k]; return p ? `<div><span style="color:${SEAT_GC[seatGK(p.g)]}">●</span> ${k}. ${esc(p.n)} <span style="color:var(--muted)">${esc(p.o)}</span></div>` : `<div class="em">${k}. —</div>`; }).join("") + `</div>`;
-  }).join("");
-  const order = ["VVIP", "Special_VVIP", "VIP", "Special_VIP", "실무위원회", "동행", "참가등록", "기타"];
-  const ung = order.map((k) => [k, un.filter((m) => seatGK(m.g) === k)]).filter(([, a]) => a.length);
-  const unHtml = un.length ? ung.map(([k, a]) => `<div style="margin-top:8px;font-size:13px"><b style="color:${SEAT_GC[k]}">${k.replace("_", " ")}</b> ${a.length}명<div class="chips">${a.map((m) => `<span class="chip" title="${esc(m.o || "")} ${esc(m.t || "")}">${esc(m.n)}</span>`).join("")}</div></div>`).join("")
-    : `<div class="seat-note">참석 예정자가 모두 자리에 배정됐어요.</div>`;
   el.innerHTML = `<div class="seat-top"><div class="seat-ev">${SEAT_EV.map((e, i) => `<button data-sev="${i}" class="${i === S.seatEv ? "on" : ""}">${e.label}</button>`).join("")}</div>
     <div class="seat-stats"><span>참석 예정 <b>${att.length}</b>명</span><span>배정 <b>${rows.length}</b>명</span><span>미배정 <b>${un.length}</b>명</span><span>필요 테이블 <b>${need}</b>개</span>
     <a class="hbtn" href="https://docs.google.com/spreadsheets/d/1zPbhMkN1S0B64-UklAhXjrI8i1XW_RjG19tcEXqLQsM/edit#gid=26112441" target="_blank" rel="noopener">시트에서 자리 고치기</a></div></div>
-    <div class="seat-wrap"><div class="seat-plan">${svg}<div class="seat-legend">${lg}</div></div><div class="seat-side">${side}</div></div>
-    <div class="seat-cards">${cards || `<div class="empty">아직 배정된 자리가 없어요. 시트 「자리배치」 탭 성명 칸에 이름을 넣으면 여기에 보여요.</div>`}</div>
-    <div class="seat-un"><h3 style="font-size:15px;margin:0">아직 자리가 없는 참석 예정자 (${un.length}명)</h3>${unHtml}
-    <div class="seat-note">참석 예정자는 통합관리 탭의 해당 일정이 '참석'인 사람 + 참가등록·설문·동행인이에요. 티켓 집계에서 뺀 실무진은 제외했어요. 흐리게 보이는 테이블은 아직 필요 없는 테이블이에요 (참석 예정 ÷ 8).</div></div>`;
+    <div class="seat-wrap"><div class="seat-plan">${svg}<div class="seat-legend">${lg}</div></div><div class="seat-side">${side}</div></div>`;
 }
 document.addEventListener("click", (e) => { const t2 = e.target.closest && e.target.closest("[data-v2]"); if (t2) show(t2.dataset.v2); });
 document.addEventListener("click", (e) => {
   const b = e.target.closest && e.target.closest("[data-sev]"); if (b) { S.seatEv = +b.dataset.sev; S.seatSel = 0; renderSeat(); return; }
-  const t = e.target.closest && e.target.closest("#seatBoard [data-st]"); if (t) { const n = +t.dataset.st; S.seatSel = S.seatSel === n ? 0 : n; renderSeat(); }
+  const t = e.target.closest && e.target.closest("#seatBoard [data-st]"); if (t) { const n = t.dataset.st; S.seatSel = S.seatSel === n ? 0 : n; renderSeat(); }
 });
 function renderPrep() {
   try { renderDash(); } catch (e) {}
@@ -1638,7 +1631,7 @@ async function refreshReport(silent) {
   try {
     const mcp = await claude.use("mcp");
     if (!mcp) { if (!silent) toast("이 화면에서는 구글 시트에 연결할 수 없어요."); return; }
-    const res = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range: "초청 명단!A9:AD800" }, { cache: false });
+    const res = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range: "초청 명단!A9:AC800" }, { cache: false });
     const va = masterFix(valuesOf(res)); if (!va.length) throw new Error("parse");
     const built = buildGuestRows(va, []);
     await S.db.doc("report/daily").set(buildReport(built.rows, silent ? "auto" : "manual", await myId()));
@@ -2003,11 +1996,12 @@ async function ledgerSync(mcp, master) {
 }
 
 /* 통합관리 탭은 H열에 「교수님 개별확인」이 있어요. 코드에서는 예전 열 순서(개별확인을 맨 끝 30번째)로 바꿔서 씀 */
-// 근거 탭은 통합관리 AE~AI로 합쳐짐(11/24, 초청 범위 열은 삭제). 예전 근거 모양 [A연번 B구분 C역할 D분야 E직위 F성명 G소속\n직책 H약력 I비고 J수동 K범위 | 11=통합관리 행]
+// 근거 탭은 초청 명단 AD~AG로 합쳐짐(11/24, H·초청 범위·수동조정 열 삭제). AD 직위 기준, AE 주요약력, AF 등급 자동판정, AG 근거 비고. 예전 근거 모양 [A연번 B구분 C역할 D분야 E직위 F성명 G소속\n직책 H약력 I비고 J수동 K범위 | 11=통합관리 행]
 const hwpFromMaster = (rows, first = 9) => (rows || []).map((r, i) => { r = r || []; const v = (k) => String(r[k] == null ? "" : r[k]);
-  return [v(0), v(1), v(2), v(3), v(30), v(4), [v(5).trim(), v(6).trim()].filter(Boolean).join("\n"), v(33), v(34), v(31), "", first + i]; })
+  return [v(0), v(1), v(2), v(3), v(29), v(4), [v(5).trim(), v(6).trim()].filter(Boolean).join("\n"), v(30), v(32), v(31) && v(1) && v(31) !== v(1) ? v(31) : "", "", first + i]; })
   .filter((r) => r[1] !== "참가등록" && (r[5].trim() || r[6].trim()));
-const masterFix = (rows) => (rows || []).map((r) => { const a = Array.from(r || []); while (a.length < 30) a.push(""); const c = a.splice(7, 1)[0]; a.push(c); return a; });
+// 11/24 「교수님 개별확인」(H) 열 삭제 → 예전 모양(끝에 확인 칸)에 맞추려고 빈 칸만 붙임
+const masterFix = (rows) => (rows || []).map((r) => { const a = Array.from(r || []).slice(0, 29); while (a.length < 29) a.push(""); a.push(""); return a; });
 function valuesOf(res) {
   let p = res && (res.payload !== undefined ? res.payload : res.structuredContent);
   if (typeof p === "string") { try { p = JSON.parse(p); } catch { p = null; } }
@@ -2102,8 +2096,8 @@ async function syncSheet() {
   btn.disabled = true; btn.textContent = "불러오는 중…"; $("syncErr").textContent = "";
   try {
     const call = (range) => mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range }, { cache: false });
-    const a = await call("초청 명단!A9:AI800");
-    const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 30))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a)) : null;
+    const a = await call("초청 명단!A9:AG800");
+    const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 29))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a)) : null;
     if (!va || !vb) throw { code: "parse", message: "시트 내용을 읽지 못했어요." };
     const built = buildGuestRows(va, vb);
     const doc = { rows: built.rows, masterCount: built.masterCount, hwpCount: built.hwpCount, syncedAt: Date.now(), syncedBy: await myId() };
@@ -3308,7 +3302,7 @@ async function tlSyncRoles(silent) {
   if (!mcp) { if (!silent) msg.innerHTML = `<span style="color:var(--red)">이 화면에서는 구글 시트에 연결할 수 없어서 전체 명단 역할은 반영하지 못했어요.</span>`; return; }
   msg.textContent = "전체 명단 초청역할에 반영하는 중…";
   try {
-    const res = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range: "초청 명단!A9:AI1200" }, { cache: false });
+    const res = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range: "초청 명단!A9:AG1200" }, { cache: false });
     const vals = hwpFromMaster(valuesOf(res) || []);
     const want = tlRoles(tlData()), prev = (S.tl && S.tl.synced) || {};
     const byName = {};
@@ -3837,7 +3831,7 @@ async function liveLoad(silent) {
   btn.disabled = true; btn.textContent = "불러오는 중…"; $("lvErr").textContent = "";
   try {
     const call = (range) => mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range }, { cache: false });
-    const [a, c, tk] = await Promise.all([call("초청 명단!A8:AI1200"), call("분류기준!A1:K60"), call("티켓 현황!A17:D36").catch(() => null)]);
+    const [a, c, tk] = await Promise.all([call("초청 명단!A8:AG1200"), call("분류기준!A1:K60"), call("티켓 현황!A17:D36").catch(() => null)]);
     let vpr = []; try { vpr = valuesOf(await call("행사 준비!A1:M80")) || []; } catch {}
     let vst = []; try { vst = valuesOf(await call("자리배치!A1:T130")) || []; } catch {}
     let vrs = [];
@@ -3860,7 +3854,7 @@ async function liveLoad(silent) {
     let vex = [];
     try { const rr = await call("전체 명단!O4:O203"); vex = (valuesOf(rr) || []).map((r) => lvS(r[0])).filter(Boolean); } catch {}
     const vtk = ((tk && valuesOf(tk)) || []).map((r) => [lvS(r[0]), lvS(r[1]), Number(lvS(r[2])) || 0, lvS(r[3])]).filter((r) => r[0] && r[2]);
-    const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 30))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a).slice(1)).map((r) => r.slice(0, 11)) : null, vc = valuesOf(c) || [];
+    const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 29))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a).slice(1)).map((r) => r.slice(0, 11)) : null, vc = valuesOf(c) || [];
     if (!va || !vb) throw { message: "시트 내용을 읽지 못했어요." };
     const me = await myId();
     S.live = liveParse(va[0], va.slice(1), vb, vc, Date.now(), window.__STATIC ? "" : me);
@@ -4055,7 +4049,7 @@ async function tkSave() {
       const chk = valuesOf(await call("get_values", { range: `초청 명단!E${c.row}` })) || [];
       if (normName(lvS((chk[0] || [])[0])) !== normName(c.n)) { fail.push(c.n); continue; }
       const vals = bits.split("").map((b, k) => (b === "1" ? "참석" : c.ownV[k] === "참석" ? "미정" : c.ownV[k] || "미정"));
-      await call("update_values", { range: `초청 명단!S${c.row}:Y${c.row}`, values: [vals] });
+      await call("update_values", { range: `초청 명단!R${c.row}:X${c.row}`, values: [vals] });
       const add = TK_SHORT.filter((_, k) => bits[k] === "1" && c.own[k] !== "1"), del = TK_SHORT.filter((_, k) => bits[k] !== "1" && c.own[k] === "1");
       done.push(`${c.n}${add.length ? " +" + add.join("·") : ""}${del.length ? " −" + del.join("·") : ""}`);
       delete S.tkPend[key];
@@ -4101,8 +4095,7 @@ async function tkAdd() {
       col.forEach((r, i) => { if ((r || []).some((x) => lvS(x))) { last = i; const v = parseInt(lvS(r[0]), 10); if (v > no) no = v; } });
       const r = 9 + last + 1, grade = g("tkNewG"), field = g("tkNewF");
       await call("update_values", { range: `초청 명단!A${r}:G${r}`, values: [[String(no + 1), grade, "", field, n, o, t]] });
-      await call("update_values", { range: `초청 명단!AF${r}`, values: [[grade]] });
-      if (!grade) await call("update_values", { range: `초청 명단!AI${r}`, values: [["등급 확인 필요"]] });
+      if (!grade) await call("update_values", { range: `초청 명단!AG${r}`, values: [["등급 확인 필요"]] });
       try { await logAct(`초청 명단 추가(통합관리 ${r}행): ${n} ${o} ${t}${grade ? " · " + grade : ""}`); } catch {}
     } else {
       const col = valuesOf(await call("get_values", { range: "전체 명단!B4:B53" })) || [];
@@ -4271,7 +4264,7 @@ function lvRenderHwp(L) {
   return lvFilters("h", L, L.H) + `<div class="lv-cnt">${list.length}명</div>
   <div class="lv-tbl lv-all"><table><thead><tr><th>구분</th><th>소속분야</th><th>직위 기준</th><th>성명</th><th>소속 / 직위</th><th>연혁</th><th>초청역할</th><th>공문</th><th>15일(전야제)</th><th>16일(오전개막)</th></tr></thead><tbody>
   ${shown.map((h) => `<tr>
-    <td class="${h.grade ? "g-" + esc(h.grade) : ""}" style="font-weight:800;text-align:center">${esc(gFull(h) || "미정")}${h.manual ? `<div style="font-size:10.5px;font-weight:500;color:var(--amber)">수동조정</div>` : ""}</td>
+    <td class="${h.grade ? "g-" + esc(h.grade) : ""}" style="font-weight:800;text-align:center">${esc(gFull(h) || "미정")}${h.manual ? `<div style="font-size:10.5px;font-weight:500;color:var(--red)">자동판정 ${esc(h.manual)}</div>` : ""}</td>
     <td>${esc(h.field)}</td>
     <td>${h.pos ? esc(h.pos) : `<span style="color:var(--red)">비어 있음</span>`}</td>
     <td class="nm">${esc(h.name)}</td>
