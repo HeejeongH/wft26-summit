@@ -3963,15 +3963,16 @@ function lvRenderTicket(L) {
       : S.tkGF === "전체" ? TK_GB.map((g) => { const ys = xs.filter(({ m }) => tkGB(m.g) === g); return ys.length ? `<div style="padding:8px 10px 2px;font-size:11px;font-weight:700;color:${GC[g]}">${g} ${ys.length}</div>` + ys.map(row).join("") : ""; }).join("")
       : xs.map(row).join("");
     return `<div style="background:#fff;border:1px solid #e6e9f0;border-radius:10px;overflow:hidden">
-      <div style="padding:9px 10px;border-bottom:2px solid #1e3a8a;display:flex;justify-content:space-between;align-items:baseline;gap:6px">
-        <div><div style="font-size:11px;color:#6b7280">${r[0]}</div><div style="font-size:13px;font-weight:700;color:#0b1733">${r[1]}</div></div>
-        <div style="font-size:13px;font-weight:700;color:#1e3a8a">${xs.length}</div></div>${body}</div>`;
+      <div style="padding:10px 10px 9px;border-bottom:2px solid #1e3a8a">
+        <div style="font-size:11px;color:#6b7280">${r[0]}</div>
+        <div style="font-size:13px;font-weight:700;color:#0b1733;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(r[1])}">${r[1]}</div>
+        <div style="margin-top:4px;display:flex;align-items:baseline;justify-content:space-between;gap:6px"><span style="font-size:18px;font-weight:800;color:#0b1733">${use[k]}<span style="font-size:12px;font-weight:500;color:#9ca3af"> / ${r[2]}</span></span>${S.tkGF !== "전체" ? `<span style="font-size:11.5px;font-weight:700;color:#1e3a8a">${esc(S.tkGF)} ${xs.length}</span>` : ""}</div>
+        <div style="height:4px;background:#eef0f5;border-radius:4px;margin-top:5px;overflow:hidden"><i style="display:block;height:100%;width:${pct(use[k], r[2])}%;background:#1e3a8a"></i></div></div>${body}</div>`;
   };
   return `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px">
     <div style="display:inline-flex;background:#f1f3f8;border-radius:8px;padding:3px">${seg("제외", "실무진 제외")}${seg("포함", `실무진 포함 +${staff.length}`)}</div>
     <div style="font-size:13px;color:#4b5563">배정 <b style="color:#0b1733;font-size:16px">${used.toLocaleString()}</b> / ${cap.toLocaleString()}장 · ${people.length + open.length}명</div>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:16px">${TK.map(card).join("")}</div>
   ${S.live ? tkEditHtml() : ""}
   <div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px">${gbs.map(chip).join("")}</div>
   <div style="overflow-x:auto;padding-bottom:4px"><div style="display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:8px;min-width:1100px;align-items:start">${TK.map(col).join("")}</div></div>
