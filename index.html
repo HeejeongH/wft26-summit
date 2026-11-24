@@ -2000,9 +2000,14 @@ async function ledgerSync(mcp, master) {
 
 /* 통합관리 탭은 H열에 「교수님 개별확인」이 있어요. 코드에서는 예전 열 순서(개별확인을 맨 끝 30번째)로 바꿔서 씀 */
 // 근거 탭은 초청 명단 AD~AG로 합쳐짐(11/24, H·초청 범위·수동조정 열 삭제). AD 직위 기준, AE 주요약력, AF 등급 자동판정, AG 근거 비고. 예전 근거 모양 [A연번 B구분 C역할 D분야 E직위 F성명 G소속\n직책 H약력 I비고 J수동 K범위 | 11=통합관리 행]
-const hwpFromMaster = (rows, first = 9) => (rows || []).map((r, i) => { r = r || []; const v = (k) => String(r[k] == null ? "" : r[k]);
-  return [v(0), v(1), v(2), v(3), v(29), v(4), [v(5).trim(), v(6).trim()].filter(Boolean).join("\n"), v(30), v(32), v(31) && v(1) && v(31) !== v(1) ? v(31) : "", "", first + i]; })
-  .filter((r) => r[1] !== "참가등록" && (r[5].trim() || r[6].trim()));
+// head(8행 머리글)를 주면 열 위치를 머리글 이름으로 찾음 → 누가 열을 옮겨도 맞게 읽음
+const hwpFromMaster = (rows, first = 9, head) => {
+  const ix = (lab, d) => { const k = (head || []).findIndex((h) => String(h || "").trim().startsWith(lab)); return k >= 0 ? k : d; };
+  const cP = ix("직위 기준", 29), cB = ix("주요약력", 30), cA = ix("등급 자동판정", 31), cN = ix("근거 비고", 32);
+  return (rows || []).map((r, i) => { r = r || []; const v = (k) => String(r[k] == null ? "" : r[k]);
+    return [v(0), v(1), v(2), v(3), v(cP), v(4), [v(5).trim(), v(6).trim()].filter(Boolean).join("\n"), v(cB), v(cN), v(cA) && v(1) && v(cA) !== v(1) ? v(cA) : "", "", first + i]; })
+    .filter((r) => r[1] !== "참가등록" && (r[5].trim() || r[6].trim()));
+};
 // 11/24 「교수님 개별확인」(H) 열 삭제 → 예전 모양(끝에 확인 칸)에 맞추려고 빈 칸만 붙임
 const masterFix = (rows) => (rows || []).map((r) => { const a = Array.from(r || []).slice(0, 29); while (a.length < 29) a.push(""); a.push(""); return a; });
 function valuesOf(res) {
@@ -2099,8 +2104,8 @@ async function syncSheet() {
   btn.disabled = true; btn.textContent = "불러오는 중…"; $("syncErr").textContent = "";
   try {
     const call = (range) => mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range }, { cache: false });
-    const a = await call("초청 명단!A9:AG800");
-    const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 29))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a)) : null;
+    const a8 = await call("초청 명단!A8:AG800"), hd = (valuesOf(a8) || [])[0], a = valuesOf(a8) ? { structuredContent: { values: valuesOf(a8).slice(1) } } : a8;
+    const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 29))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a), 9, hd) : null;
     if (!va || !vb) throw { code: "parse", message: "시트 내용을 읽지 못했어요." };
     const built = buildGuestRows(va, vb);
     const doc = { rows: built.rows, masterCount: built.masterCount, hwpCount: built.hwpCount, syncedAt: Date.now(), syncedBy: await myId() };
@@ -3305,8 +3310,8 @@ async function tlSyncRoles(silent) {
   if (!mcp) { if (!silent) msg.innerHTML = `<span style="color:var(--red)">이 화면에서는 구글 시트에 연결할 수 없어서 전체 명단 역할은 반영하지 못했어요.</span>`; return; }
   msg.textContent = "전체 명단 초청역할에 반영하는 중…";
   try {
-    const res = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range: "초청 명단!A9:AG1200" }, { cache: false });
-    const vals = hwpFromMaster(valuesOf(res) || []);
+    const res = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range: "초청 명단!A8:AG1200" }, { cache: false });
+    const all8 = valuesOf(res) || [], vals = hwpFromMaster(all8.slice(1), 9, all8[0]);
     const want = tlRoles(tlData()), prev = (S.tl && S.tl.synced) || {};
     const byName = {};
     vals.forEach((r) => { const n = normName(r[5]); if (n) (byName[n] = byName[n] || []).push({ row: r[11], name: lvS(r[5]), role: lvS(r[2]) }); });
@@ -3857,7 +3862,7 @@ async function liveLoad(silent) {
     let vex = [];
     try { const rr = await call("전체 명단!O4:O203"); vex = (valuesOf(rr) || []).map((r) => lvS(r[0])).filter(Boolean); } catch {}
     const vtk = ((tk && valuesOf(tk)) || []).map((r) => [lvS(r[0]), lvS(r[1]), Number(lvS(r[2])) || 0, lvS(r[3])]).filter((r) => r[0] && r[2]);
-    const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 29))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a).slice(1)).map((r) => r.slice(0, 11)) : null, vc = valuesOf(c) || [];
+    const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 29))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a).slice(1), 9, valuesOf(a)[0]).map((r) => r.slice(0, 11)) : null, vc = valuesOf(c) || [];
     if (!va || !vb) throw { message: "시트 내용을 읽지 못했어요." };
     const me = await myId();
     S.live = liveParse(va[0], va.slice(1), vb, vc, Date.now(), window.__STATIC ? "" : me);
