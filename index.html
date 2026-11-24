@@ -2000,9 +2000,9 @@ async function ledgerSync(mcp, master) {
 }
 
 /* 통합관리 탭은 H열에 「교수님 개별확인」이 있어요. 코드에서는 예전 열 순서(개별확인을 맨 끝 30번째)로 바꿔서 씀 */
-// 근거 탭은 통합관리 AE~AJ로 합쳐짐(11/24). 예전 근거 모양 [A연번 B구분 C역할 D분야 E직위 F성명 G소속\n직책 H약력 I비고 J수동 K범위 | 11=통합관리 행]
+// 근거 탭은 통합관리 AE~AI로 합쳐짐(11/24, 초청 범위 열은 삭제). 예전 근거 모양 [A연번 B구분 C역할 D분야 E직위 F성명 G소속\n직책 H약력 I비고 J수동 K범위 | 11=통합관리 행]
 const hwpFromMaster = (rows, first = 9) => (rows || []).map((r, i) => { r = r || []; const v = (k) => String(r[k] == null ? "" : r[k]);
-  return [v(0), v(1), v(2), v(3), v(30), v(4), [v(5).trim(), v(6).trim()].filter(Boolean).join("\n"), v(34), v(35), v(31), v(33), first + i]; })
+  return [v(0), v(1), v(2), v(3), v(30), v(4), [v(5).trim(), v(6).trim()].filter(Boolean).join("\n"), v(33), v(34), v(31), "", first + i]; })
   .filter((r) => r[1] !== "참가등록" && (r[5].trim() || r[6].trim()));
 const masterFix = (rows) => (rows || []).map((r) => { const a = Array.from(r || []); while (a.length < 30) a.push(""); const c = a.splice(7, 1)[0]; a.push(c); return a; });
 function valuesOf(res) {
@@ -2099,7 +2099,7 @@ async function syncSheet() {
   btn.disabled = true; btn.textContent = "불러오는 중…"; $("syncErr").textContent = "";
   try {
     const call = (range) => mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range }, { cache: false });
-    const a = await call("초청 명단!A9:AJ800");
+    const a = await call("초청 명단!A9:AI800");
     const va = valuesOf(a) ? masterFix(valuesOf(a).map((r) => (r || []).slice(0, 30))) : null, vb = valuesOf(a) ? hwpFromMaster(valuesOf(a)) : null;
     if (!va || !vb) throw { code: "parse", message: "시트 내용을 읽지 못했어요." };
     const built = buildGuestRows(va, vb);
@@ -3305,7 +3305,7 @@ async function tlSyncRoles(silent) {
   if (!mcp) { if (!silent) msg.innerHTML = `<span style="color:var(--red)">이 화면에서는 구글 시트에 연결할 수 없어서 전체 명단 역할은 반영하지 못했어요.</span>`; return; }
   msg.textContent = "전체 명단 초청역할에 반영하는 중…";
   try {
-    const res = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range: "초청 명단!A9:AJ1200" }, { cache: false });
+    const res = await mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range: "초청 명단!A9:AI1200" }, { cache: false });
     const vals = hwpFromMaster(valuesOf(res) || []);
     const want = tlRoles(tlData()), prev = (S.tl && S.tl.synced) || {};
     const byName = {};
@@ -3834,7 +3834,7 @@ async function liveLoad(silent) {
   btn.disabled = true; btn.textContent = "불러오는 중…"; $("lvErr").textContent = "";
   try {
     const call = (range) => mcp.callTool(SHEET_SERVER, "get_values", { spreadsheetId: SHEET_ID, range }, { cache: false });
-    const [a, c, tk] = await Promise.all([call("초청 명단!A8:AJ1200"), call("분류기준!A1:K60"), call("티켓 현황!A17:D36").catch(() => null)]);
+    const [a, c, tk] = await Promise.all([call("초청 명단!A8:AI1200"), call("분류기준!A1:K60"), call("티켓 현황!A17:D36").catch(() => null)]);
     let vpr = []; try { vpr = valuesOf(await call("행사 준비!A1:M80")) || []; } catch {}
     let vst = []; try { vst = valuesOf(await call("자리배치!A1:X160")) || []; } catch {}
     let vrs = [];
@@ -4099,7 +4099,7 @@ async function tkAdd() {
       const r = 9 + last + 1, grade = g("tkNewG"), field = g("tkNewF");
       await call("update_values", { range: `초청 명단!A${r}:G${r}`, values: [[String(no + 1), grade, "", field, n, o, t]] });
       await call("update_values", { range: `초청 명단!AF${r}`, values: [[grade]] });
-      if (!grade) await call("update_values", { range: `초청 명단!AJ${r}`, values: [["등급 확인 필요"]] });
+      if (!grade) await call("update_values", { range: `초청 명단!AI${r}`, values: [["등급 확인 필요"]] });
       try { await logAct(`초청 명단 추가(통합관리 ${r}행): ${n} ${o} ${t}${grade ? " · " + grade : ""}`); } catch {}
     } else {
       const col = valuesOf(await call("get_values", { range: "전체 명단!B4:B53" })) || [];
