@@ -1378,7 +1378,7 @@ const SEAT_EV = [{ k: "15일 갈라디너", d: 0, label: "12/15 갈라디너", b
 // 시트 「자리배치」는 행사장 모양 그대로 표가 놓인 격자: 행사 제목 행(base), 무대(base+1), 테이블 줄 r의 머리 행 = base+2+10r, 좌석 1~8 = 그 아래 8행, 표 하나 = 4열(성명·소속·직책·여백)
 function seatFromGrid(V, L) {
   const cell = (r, c) => String(((V[r - 1] || [])[c]) ?? "").trim();
-  const gOf = {}; ((L && L.M) || []).forEach((m) => { if (m.name) gOf[normName(m.name)] = m.gfull || m.grade || ""; });
+  const gOf = {}; ((L && L.M) || []).forEach((m) => { if (normName(m.name)) gOf[normName(m.name)] = m.gfull || m.grade || ""; });
   const out = [];
   SEAT_EV.forEach((ev) => ev.grid.forEach((row, r) => row.forEach((t, c) => { if (!t) return; const H = ev.base + 2 + 10 * r;
     for (let k = 1; k <= 8; k++) { const n = cell(H + k, c * 4); if (!n) continue; const o = [cell(H + k, c * 4 + 1), cell(H + k, c * 4 + 2)].filter(Boolean).join(" ");
@@ -1404,8 +1404,8 @@ function renderSeat() {
   const T = {}; rows.forEach((r) => { const t = String(r[1]), k = +r[2]; if (!t || !k) return; (T[t] = T[t] || {})[k] = { n: r[3], o: r[4] || "", g: r[5] || "", m: r[6] || "" }; });
   let P = []; try { P = tkPack(L).P || []; } catch (e) {}
   const att = P.filter((m) => !m.ex && m.d && m.d[ev.d] === "1");
-  const asg = new Set(rows.map((r) => normName(r[3])));
-  const un = att.filter((m) => !asg.has(normName(m.n)));
+  const asg = new Set(rows.map((r) => normName(r[3])).filter(Boolean));
+  const un = att.filter((m) => !normName(m.n) || !asg.has(normName(m.n)));
   const need = Math.ceil(att.length / 8);
   const tabs = seatTables(ev), order = tabs.map((x) => x.t).sort((p, q) => seatKey(p) - seatKey(q));
   const sel = S.seatSel;
@@ -1434,10 +1434,10 @@ function renderSeat() {
     .map(([k, v]) => `<span><i style="background:${SEAT_GC[k]}"></i>${v}</span>`).join("") + `<span><i style="background:#fff;border:1px solid #cfd5e1"></i>빈 자리</span>`;
   const side = (() => {
     if (!sel) {
-      const at = {}; rows.forEach((r) => { at[normName(r[3])] = r[1] + "-" + r[2]; });
+      const at = {}; rows.forEach((r) => { const k = normName(r[3]) || "#" + r[3] + "|" + r[4]; at[k] = r[1] + "-" + r[2]; });
       const seen = new Set(), ppl = [];
       att.forEach((m) => { const k = normName(m.n) || "#" + m.n + "|" + m.o; if (seen.has(k)) return; seen.add(k); ppl.push({ n: m.n, o: [m.o, m.t].filter(Boolean).join(" "), g: m.g, tb: at[k] || "" }); });
-      rows.forEach((r) => { const k = normName(r[3]); if (seen.has(k)) return; seen.add(k); ppl.push({ n: r[3], o: r[4], g: r[5], tb: at[k] }); });
+      rows.forEach((r) => { const k = normName(r[3]) || "#" + r[3] + "|" + r[4]; if (seen.has(k)) return; seen.add(k); ppl.push({ n: r[3], o: r[4], g: r[5], tb: at[k] }); });
       return `<h3>전체 명단 <span style="color:var(--muted);font-weight:400;font-size:13px">${ppl.length}명</span></h3><div style="max-height:640px;overflow:auto"><table class="seat-all" style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed"><colgroup><col style="width:96px"><col><col style="width:56px"></colgroup>` +
         `<tr style="position:sticky;top:0;background:#fff"><th style="text-align:left;padding:4px 6px">성명</th><th style="text-align:left;padding:4px 6px">소속</th><th style="padding:4px 6px;width:56px">테이블</th></tr>` +
         ppl.map((p) => `<tr style="border-top:1px solid #eef0f4"><td style="padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.n)}"><span style="color:${SEAT_GC[seatGK(p.g)]}">●</span> ${esc(p.n)}</td><td style="padding:4px 6px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.o || "")}">${esc(p.o || "")}</td><td style="padding:4px 6px;text-align:center;font-weight:700">${esc(p.tb || "")}</td></tr>`).join("") + `</table></div>`;
@@ -1865,6 +1865,8 @@ S.guestTab = "all";
 
 const normName = (s) => String(s || "").replace(/\(.*?\)|（.*?）/g, "").replace(/[\s･·・\/,.\-]/g, "").toLowerCase();
 const normOrg = (s) => String(s || "").split(/\r?\n/)[0].replace(/\(.*?\)/g, "").replace(/[\s･·・\/,.\-㈜]|주식회사|\(주\)/g, "").toLowerCase();
+// 사람 비교용 키: 이름이 괄호뿐이라 비교값이 빈칸이 되는 경우(「(미정)」 등)엔 원래 이름+소속으로 구분
+const pKey = (n, o) => normName(n) || "#" + String(n || "").trim() + "|" + normOrg(o);
 const isBlankName = (s) => { const t = String(s || "").trim(); return !t || t === "(미정)" || t === "미정" || t === "-"; };
 const gBase = (s) => { const t = String(s || "").trim(); return /^Special/.test(t) ? "Special" : t; };
 const gFull = (r) => (r && (r.gfull || r.grade)) || "";
@@ -3924,7 +3926,7 @@ const tkPack = (L) => {
   // 참가 신청 설문 응답 + 참가등록 관리시트: 같은 이름이 있으면 합치고, 없으면 새로 추가
   (L.rs || []).forEach((r) => {
     let bits = r[3] || "";
-    if (r[6]) { const h = L.M.find((m) => normName(m.name) === normName(r[5])); bits = h ? [0, 1, 2, 3, 4, 5, 6].map((k) => (h.days[k] && h.days[k].v === "참석" ? "1" : "0")).join("") : "0000000"; }
+    if (r[6]) { const hk = normName(r[5]), h = hk ? L.M.find((m) => normName(m.name) === hk) : null; bits = h ? [0, 1, 2, 3, 4, 5, 6].map((k) => (h.days[k] && h.days[k].v === "참석" ? "1" : "0")).join("") : "0000000"; }
     if (!/1/.test(bits)) return;
     // 이름이 괄호뿐인 사람(「(미정)」, 「(이름 미정 #6)」)은 이름 비교가 빈 값이 되니 합치지 않고 따로 넣음
     const rk = normName(r[0]); let x = rk ? P.find((q) => normName(q.n) === rk) : null;
@@ -3996,10 +3998,10 @@ function tkCands() {
   const L = S.live; if (!L) return [];
   const D = tkPack(L), out = [];
   L.M.forEach((m) => {
-    const p = D.P.find((x) => normName(x.n) === normName(m.name));
+    const mk = pKey(m.name, m.org), p = D.P.find((x) => pKey(x.n, x.o) === mk);
     out.push({ key: "m" + m.row, row: m.row, n: m.name, o: m.org, t: m.title, g: m.gfull || m.grade || "", own: tkBitsOf(m), all: p ? p.d : tkBitsOf(m), ownV: m.days.map((x) => x.v) });
   });
-  D.P.forEach((x) => { if (!L.M.some((m) => normName(m.name) === normName(x.n))) out.push({ key: "x" + normName(x.n), n: x.n, o: x.o, t: x.t, g: x.g, own: x.d, all: x.d, ro: true }); });
+  D.P.forEach((x) => { const xk = pKey(x.n, x.o); if (!L.M.some((m) => pKey(m.name, m.org) === xk)) out.push({ key: "x" + xk, n: x.n, o: x.o, t: x.t, g: x.g, own: x.d, all: x.d, ro: true }); });
   return out;
 }
 function tkResHtml() {
@@ -4092,7 +4094,7 @@ async function tkAdd() {
   try {
     if (mode === "h") {
       const col = valuesOf(await call("get_values", { range: "초청 명단!A9:E1200" })) || [];
-      if (col.some((r) => normName(lvS((r || [])[4])) === normName(n))) { toast(`${n}은(는) 이미 초청 명단에 있어요.`); return; }
+      if (normName(n) && col.some((r) => normName(lvS((r || [])[4])) === normName(n))) { toast(`${n}은(는) 이미 초청 명단에 있어요.`); return; }
       let last = -1, no = 0;
       col.forEach((r, i) => { if ((r || []).some((x) => lvS(x))) { last = i; const v = parseInt(lvS(r[0]), 10); if (v > no) no = v; } });
       const r = 9 + last + 1, grade = g("tkNewG"), field = g("tkNewF");
