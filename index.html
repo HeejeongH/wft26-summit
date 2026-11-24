@@ -530,7 +530,7 @@ nav .nav-agent:hover{background:#22306a}
 .lv-tbl.lv-crit td small{font-size:9.5px!important}
 .lv-tbl.lv-crit td.gcell{min-width:64px;font-size:13px}
 .lv-tbl.lv-crit td.g-KEY{background:#fcd34d;color:#78350f;text-align:center}
-.lv-tbl.lv-crit td[style*="white-space:pre;"] small{white-space:nowrap}
+.lv-tbl.lv-crit td.kline,.lv-raw .lv-tbl.lv-crit td.kline{white-space:pre!important;min-width:0!important}
 .lv-tbl.lv-crit td.cnote{background:#f6f8fc;font-weight:700;color:var(--navy)}
 .lv-crit-notes{font-size:12.5px;color:#4a5068;margin-top:10px;line-height:1.7;white-space:pre-wrap}
 
@@ -4166,7 +4166,7 @@ function lvRenderRaw(C) {
     if (isSp && !S.critSp) { h += `<tr><td class="g-Special gcell">${esc(g.grade)}</td><td colspan="${nF}"><button class="btn" data-crit-sp style="font-size:12px;padding:3px 10px">펼치기 ▾</button></td></tr>`; return; }
     g.rows.forEach((cells, i) => {
       h += `<tr>${i === 0 ? `<td rowspan="${g.rows.length}" class="${g.grade ? "g-" + esc(String(g.grade).split(/\s/)[0]) : ""} gcell">${esc(g.grade)}${isSp ? `<div><button class="btn" data-crit-sp style="font-size:11px;padding:2px 8px;margin-top:6px">접기 ▴</button></div>` : ""}</td>` : ""}`;
-      h += isNote(cells) ? `<td colspan="${nF}" class="cnote">${esc(cells[0])}</td>` : cells.map((x, ci) => `<td${(() => { const st = [/^KEY/.test(g.grade) ? "white-space:pre;min-width:0" : /^(VVIP|VIP|Special)/.test(g.grade) ? "white-space:pre-line;min-width:120px" : "", cells.ex ? "color:#6b7280;font-size:12px;background:#fafbfc" : ""].filter(Boolean).join(";"); return st ? ` style="${st}"` : ""; })()}>${cells.ex && ci === 0 && !x ? '<span style="font-weight:700;color:#9ca3af">예시</span>' : ""}${esc(x).replace(/\(([^()]*)\)/g, '<small style="font-size:10px;color:#a0a6b2">($1)</small>')}</td>`).join("");
+      h += isNote(cells) ? `<td colspan="${nF}" class="cnote">${esc(cells[0])}</td>` : cells.map((x, ci) => `<td${/^KEY/.test(g.grade) ? ' class="kline"' : ""}${(() => { const st = [/^KEY/.test(g.grade) ? "white-space:pre;min-width:0" : /^(VVIP|VIP|Special)/.test(g.grade) ? "white-space:pre-line;min-width:120px" : "", cells.ex ? "color:#6b7280;font-size:12px;background:#fafbfc" : ""].filter(Boolean).join(";"); return st ? ` style="${st}"` : ""; })()}>${cells.ex && ci === 0 && !x ? '<span style="font-weight:700;color:#9ca3af">예시</span>' : ""}${esc(x).replace(/\(([^()]*)\)/g, '<small style="font-size:10px;color:#a0a6b2">($1)</small>')}</td>`).join("");
       h += `</tr>`;
     });
   });
