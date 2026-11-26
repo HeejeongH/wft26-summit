@@ -1713,7 +1713,7 @@ function renderReport() {
   const colBody = (xs) => {
     if (!xs.length) return `<div class="zero" style="font-size:12px">없음</div>`;
     const fs = [...REP_FIELDS, ...[...new Set(xs.map((x) => x.f))].filter((f) => !REP_FIELDS.includes(f))];
-    const gs = [...REP_GORD.slice(0, 4), ...[...new Set(xs.map((x) => repGB(x.g)))].filter((g) => !REP_GORD.slice(0, 4).includes(g))];
+    const gs = [...REP_GORD.slice(0, 4), ...[...new Set([...R.att, ...R.dec].map((x) => repGB(x.g)))].filter((g) => !REP_GORD.slice(0, 4).includes(g))];
     const cnt = (f, g) => xs.filter((x) => (f == null || x.f === f) && (g == null || repGB(x.g) === g)).length;
     const td = (n, b) => `<td${b ? ' class="b"' : ""}>${n ? n : '<span class="z">·</span>'}</td>`;
     const counts = `<table class="dtab"><thead><tr><th>분야</th>${gs.map((g) => `<th>${esc(g)}</th>`).join("")}<th>계</th></tr></thead><tbody>
