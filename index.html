@@ -744,6 +744,13 @@ details.lv-d summary::-webkit-details-marker{display:none}
 .seat-un .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .seat-un .chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;background:#fff}
 .seat-note{font-size:12px;color:var(--muted);margin-top:10px}
+.rep .dtab{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0 8px;font-variant-numeric:tabular-nums}
+.rep .dtab th{font-weight:600;color:var(--muted);font-size:11px;padding:3px 4px;border-bottom:1px solid #e3e7ef;text-align:right;white-space:nowrap}
+.rep .dtab th:first-child,.rep .dtab td:first-child{text-align:left}
+.rep .dtab td{padding:3px 4px;border-bottom:1px solid #f1f3f7;text-align:right;white-space:nowrap}
+.rep .dtab td.b{font-weight:700}.rep .dtab tr.e td{color:#b6bccb}.rep .dtab .z{color:#c9ced9}
+.rep .dtab tr.tot td{border-top:1px solid #d5dbe7;border-bottom:0;font-weight:700}
+.rep .nflow{border-top:1px dashed #e3e7ef;padding-top:4px}
 </style>
 <script>/* 보기 전용 사본: claude.ai 런타임 대신 저장된 스냅샷을 돌려줌 */
 (function () {
@@ -1588,7 +1595,9 @@ function buildReport(rows, mode, by) {
   };
 }
 const repGroup = (arr) => { const m = {}; arr.forEach((x) => (m[x.f] = m[x.f] || []).push(x)); const ord = [...REP_FIELDS, ...Object.keys(m).filter((f) => !REP_FIELDS.includes(f))]; return ord.filter((f) => m[f]).map((f) => [f, m[f]]); };
-const repByGrade = (xs) => { const ord = ["VVIP", "Special_VVIP", "VIP", "Special_VIP", "Special", "실무위원회", "동행", "구분 미정"]; const m = {}; xs.forEach((x) => (m[x.g] = m[x.g] || []).push(x)); return [...ord, ...Object.keys(m).filter((g) => !ord.includes(g))].filter((g) => m[g]).map((g) => [g, m[g]]); };
+const repGB = (g) => /^Special/.test(g || "") ? "Special" : (g === "실무위원회" || g === "실무진") ? "실무" : (g || "구분 미정");
+const REP_GORD = ["VVIP", "VIP", "Special", "실무", "동행", "구분 미정"];
+const repByGrade = (xs) => { const m = {}; xs.forEach((x) => { const g = repGB(x.g); (m[g] = m[g] || []).push(x); }); return [...REP_GORD, ...Object.keys(m).filter((g) => !REP_GORD.includes(g))].filter((g) => m[g]).map((g) => [g, m[g]]); };
 const repSortKo = (xs) => [...xs].sort((a, b) => String(a.n).localeCompare(String(b.n), "ko"));
 const repNamesTxt = (xs, star) => repByGrade(xs).map(([g, ys]) => `[${g}] ` + repSortKo(ys).map((x) => x.n + (star && x.c && x.c !== "확인 완료" ? "*" : "")).join(", ")).join(" / ");
 const REP_DAYS = [{ d: "15일", sub: "갈라디너", s: [["갈라디너", 0]] }, { d: "16일", sub: "개막식·일반세션", s: [["개막식", 1], ["개막 오찬", 2], ["일반세션 1-2", 3]] }, { d: "17일", sub: "특별세션·일반세션", s: [["특별세션", 4], ["2일차 오찬", 5], ["일반세션 3-4", 6]] }];
@@ -1695,7 +1704,7 @@ function renderReport() {
     ${rest.length ? `<div class="rest">${rest.map((G) => `<span><b>${esc(G.g)}</b> 대상 ${G.total.all} · 발송 ${G.total.inv} · 참석 ${G.total.att} · 불참 ${G.total.dec}</span>`).join("")}</div>` : ""}`;
   // ② 이름: 등급별 한 줄, 칩 색 = 분야
   const chip = (x) => `<span class="pn${x.c && x.c !== "확인 완료" ? " chk" : ""}" title="${esc(x.f + " · " + x.o + " " + (x.t || ""))}">${esc(x.n)}</span>`;
-  const flow = (xs) => xs.length ? repByGrade(xs).map(([g, ys]) => `<div class="pl"><span class="pg pg-${esc(g).replace(/\s/g, "")}">${esc(g)}</span><span class="pns">${repSortKo(ys).map(chip).join("")}</span></div>`).join("") : `<div class="z" style="font-size:12px">없음</div>`;
+  const flow = (xs) => xs.length ? repByGrade(xs).map(([g, ys]) => `<div class="pl"><span class="pg pg-${esc(g).replace(/\s/g, "")}">${esc(g)}</span><span class="pns">${(g === "Special" ? [...repSortKo(ys.filter((x) => /VVIP$/.test(x.g))), ...repSortKo(ys.filter((x) => !/VVIP$/.test(x.g)))] : repSortKo(ys)).map(chip).join("")}</span></div>`).join("") : `<div class="z" style="font-size:12px">없음</div>`;
   const DS = repDaySplit(R.att);
   const usedF = [...new Set([...R.att, ...R.dec].map((x) => x.f))];
   const legend = `<div class="legend">${REP_FIELDS.concat(usedF.filter((f) => !REP_FIELDS.includes(f))).filter((f) => usedF.includes(f)).map((f) => { const [bg, fg] = repColor(f); return `<span><i style="background:${fg}"></i>${esc(repLab(f))}</span>`; }).join("")}</div>`;
@@ -1703,9 +1712,14 @@ function renderReport() {
   const NAME_MAX = 12;
   const colBody = (xs) => {
     if (!xs.length) return `<div class="zero" style="font-size:12px">없음</div>`;
-    const counts = `<div class="crs">${repGroup(xs).map(([f, ys]) => { const [, fg] = repColor(f); const gg = repByGrade(ys); const gb = gg.length > 1 ? gg.map(([g, zs]) => `${g} ${zs.length}`).join(" · ") : gg[0][0];
-      return `<div class="cr"><span class="cf">${esc(repLab(f))}</span><b>${ys.length}</b><small>${esc(gb)}</small></div>`; }).join("")}</div>`;
-    if (xs.length <= NAME_MAX) return flow(xs);
+    const fs = [...REP_FIELDS, ...[...new Set(xs.map((x) => x.f))].filter((f) => !REP_FIELDS.includes(f))];
+    const gs = [...REP_GORD.slice(0, 4), ...[...new Set(xs.map((x) => repGB(x.g)))].filter((g) => !REP_GORD.slice(0, 4).includes(g))];
+    const cnt = (f, g) => xs.filter((x) => (f == null || x.f === f) && (g == null || repGB(x.g) === g)).length;
+    const td = (n, b) => `<td${b ? ' class="b"' : ""}>${n ? n : '<span class="z">·</span>'}</td>`;
+    const counts = `<table class="dtab"><thead><tr><th>분야</th>${gs.map((g) => `<th>${esc(g)}</th>`).join("")}<th>계</th></tr></thead><tbody>
+      ${fs.map((f) => `<tr${cnt(f) ? "" : ' class="e"'}><td>${esc(repLab(f))}</td>${gs.map((g) => td(cnt(f, g))).join("")}${td(cnt(f), 1)}</tr>`).join("")}
+      <tr class="tot"><td>합계</td>${gs.map((g) => td(cnt(null, g), 1)).join("")}${td(xs.length, 1)}</tr></tbody></table>`;
+    if (xs.length <= NAME_MAX) return counts + `<div class="nflow">${flow(xs)}</div>`;
     return counts + `<details class="nfold"><summary>명단 ${xs.length}명 · 펼치기</summary>${flow(xs)}</details>`;
   };
   const days = `<div class="dgrid3">${DS.days.map((D) => dcol(D.d, D.xs.length, D.cnt.length > 1 ? D.cnt.map(([l, n]) => `${l} ${n}`).join(" · ") : D.sub, colBody(D.xs))).join("")}</div>
