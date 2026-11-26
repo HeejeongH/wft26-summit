@@ -1627,6 +1627,13 @@ function repText(R) {
 }
 let repBusy = false, repAutoTried = false;
 async function refreshReport(silent) {
+  if (window.__STATIC) { // GitHub 사이트: 게시된 시트를 다시 읽어 화면에서 바로 집계 (저장은 안 함)
+    if (repBusy) return; repBusy = true; const b = $("repRefresh"); if (b) { b.disabled = true; b.textContent = "불러오는 중…"; }
+    try { await liveLoad(true); if (!silent) toast("시트에서 최신 현황을 다시 불러왔어요."); }
+    catch (e) { if (!silent) toast("시트를 읽지 못했어요. 잠시 뒤 다시 눌러 주세요."); }
+    finally { repBusy = false; const b2 = $("repRefresh"); if (b2) { b2.disabled = false; b2.textContent = "지금 새로고침"; } }
+    return;
+  }
   if (repBusy || !S.db || S.readOnly) { if (!silent && S.readOnly) toast("보기 전용 권한이라 새로고침할 수 없어요."); return; }
   repBusy = true; const b = $("repRefresh"); if (b) { b.disabled = true; b.textContent = "불러오는 중…"; }
   try {
