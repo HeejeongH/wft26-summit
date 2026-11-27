@@ -2288,7 +2288,7 @@ async function buildRosterHwpx(rows, staff, stamp) {
       .replace("@@SUM2@@", rsX(`   - ${t.summ.map((s) => `${s[0]} ${s[1]}/${s[2]}`).join(" · ")}  (참석/초청)`))
       + t.xml + part.after;
   });
-  sec += RS_PARTS.tail;
+  sec += "</hs:sec>";
   const src = await JSZip.loadAsync(b64ToBytes(RS_TPL)), out = new JSZip();
   for (const name of Object.keys(src.files)) {
     const f = src.files[name]; if (f.dir) continue;
