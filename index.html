@@ -1506,6 +1506,40 @@ function renderPrep() {
 }
 
 /* ---------- 대시보드 (그래프) ---------- */
+/* ---------- 일자별 참석 현황 (교수님 보고 기준: VVIP·VIP·Special·실무위원·동행·내부) ---------- */
+function rsDayAgg(st) { if (st.includes("참석")) return "참석"; if (st.every((x) => x === "–")) return "–"; if (st.includes("미정")) return "미정"; if (st.includes("발송 전")) return "발송 전"; return "불참"; }
+function rsSummary(rows, staff) {
+  const G = RS_GRADES.map(([lab]) => ({ lab, d: [0, 1, 2].map(() => ({ inv: 0, att: 0 })) })).concat([{ lab: "내부 인원", d: [0, 1, 2].map(() => ({ inv: 0, att: 0 })) }]);
+  const vv = [];
+  rows.forEach((r) => {
+    const gi = RS_GRADES.findIndex(([, gs]) => gs.includes(String(r[1] || "").trim())); if (gi < 0) return;
+    const ds = RS_DAYS.map((day) => rsDayAgg(rsStatus(r, day.cols)));
+    ds.forEach((x, i) => { if (x === "–") return; G[gi].d[i].inv++; if (x === "참석") G[gi].d[i].att++; });
+    if (gi === 0) vv.push({ n: String(r[4] || "").trim(), o: [r[5], r[6]].map((x) => String(x || "").trim()).filter((x) => x && x !== "-").join(" "), f: String(r[3] || "").trim(), ds, ck: String(r[15] || r[16] || "").trim() });
+  });
+  const inner = G[G.length - 1];
+  (staff || []).forEach((s) => { const grp = String(s[0] || "").trim(); if (!s[1] || !RS_SGRP.some(([, gs]) => gs.includes(grp))) return;
+    RS_DAYS.forEach((day, i) => { if (!day.scols.length) return;
+      if (grp.startsWith("최고책임자")) { inner.d[i].inv++; return; }
+      const chk = day.scols.map((c) => rsTrue(s[c])); if (!chk.some(Boolean)) return; inner.d[i].inv++; inner.d[i].att++; }); });
+  return { G, vv };
+}
+function rsSummaryHtml(L) {
+  if (!L || !L.rr) return `<div class="empty">「새로 불러오기」를 누르면 보여요.</div>`;
+  const { G, vv } = rsSummary(L.rr, L.st);
+  const DL = ["12/15 갈라디너", "12/16 본행사", "12/17 본행사"];
+  const tot = [0, 1, 2].map((i) => G.reduce((a, g) => ({ inv: a.inv + g.d[i].inv, att: a.att + g.d[i].att }), { inv: 0, att: 0 }));
+  const cell = (x) => x.inv ? `<td style="text-align:center;padding:5px 8px"><b style="color:#047857">${x.att}</b><span style="color:var(--muted)"> / ${x.inv}</span></td>` : `<td style="text-align:center;color:var(--muted)">–</td>`;
+  const SC = { 참석: "#047857", 불참: "#b91c1c", 미정: "#6b7389", "발송 전": "#94a3b8", "–": "#cbd5e1" };
+  const tb = `<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f3f5f9"><th style="text-align:left;padding:5px 8px">구분</th>${DL.map((d) => `<th style="padding:5px 8px">${d}</th>`).join("")}</tr>` +
+    G.map((g) => `<tr style="border-top:1px solid #eef0f4"><td style="padding:5px 8px;font-weight:600">${esc(g.lab)}</td>${g.d.map(cell).join("")}</tr>`).join("") +
+    `<tr style="border-top:2px solid #16224a;background:#fffbe6"><td style="padding:5px 8px;font-weight:700">합계</td>${tot.map(cell).join("")}</tr></table>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:4px">참석 확정 / 초청 · 한글 명단과 같은 기준 · 내부 인원 최고책임자과정은 날짜 미정이라 초청에만 셈</div>`;
+  const vl = `<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">VVIP 초청 명단 ${vv.length}명 <span style="font-weight:400;color:var(--muted);font-size:12px">— 불참 회신자도 교수님 개별 연락 대상이라 모두 포함</span></summary>
+    <div style="max-height:420px;overflow:auto;margin-top:6px"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tr style="position:sticky;top:0;background:#fff"><th style="text-align:left;padding:4px 6px">성명</th><th style="text-align:left;padding:4px 6px">소속·직위</th>${["15일", "16일", "17일"].map((d) => `<th style="padding:4px 6px">${d}</th>`).join("")}</tr>` +
+    vv.map((v) => `<tr style="border-top:1px solid #eef0f4"><td style="padding:4px 6px;white-space:nowrap">${esc(v.n)}</td><td style="padding:4px 6px">${esc(v.o)}</td>${v.ds.map((x) => `<td style="text-align:center;color:${SC[x] || "#6b7389"};font-weight:${x === "참석" ? 700 : 400}">${esc(x)}</td>`).join("")}</tr>`).join("") + `</table></div></details>`;
+  return tb + vl;
+}
 function renderDash() {
   const el = $("dash"); if (!el) return;
   const R = S.report && S.report.v === 3 ? S.report : null;
@@ -1543,6 +1577,7 @@ function renderDash() {
   el.innerHTML = `<div class="dkpi">${kpi}</div>
     <div class="dgrid">
       ${card("초청 진행", R ? funnel : wait, ["status", "초청·공문 현황"])}
+      ${card("일자별 참석 현황 (VVIP·VIP·Special·실무위원·동행·내부)", rsSummaryHtml(S.live), null, "wide")}
       ${card("일자별 참석 확정", R ? days : wait, ["ticket", "티켓 현황"])}
       ${card("등급별 회신", R ? grade + legend : wait, ["status", "상세 보고"])}
       ${card("분야별 회신", R ? field + legend : wait, ["list", "전체 명단"])}
@@ -4047,6 +4082,7 @@ async function liveLoad(silent) {
     if (!va || !vb) throw { message: "시트 내용을 읽지 못했어요." };
     const me = await myId();
     S.live = liveParse(va[0], va.slice(1), vb, vc, Date.now(), window.__STATIC ? "" : me);
+    try { S.live.rr = (valuesOf(a) || []).slice(1).filter((r) => String((r || [])[4] || "").trim()); S.live.st = valuesOf(await call("실무진!A4:K300")) || []; } catch { S.live.st = S.live.st || []; }
     S.live.tk = vtk; S.live.rs = vrs; S.live.ex = vex; S.live.pr = vpr.map((r) => (r || []).map(lvS)); S.live.seat = seatFromGrid(vst.map((r) => (r || []).map(lvS)), S.live); renderPrep(); renderSeat();
     renderLive();
     if (S.db && !S.readOnly) { try { const tp = tkPack(S.live); await S.db.doc("ticket/latest").set({ at: tp.at, P: tp.P, tk: JSON.stringify(tp.tk) }); } catch {} }
