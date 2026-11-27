@@ -1152,6 +1152,7 @@ const LOGO_B64="iVBORw0KGgoAAAANSUhEUgAAALQAAADcCAIAAABWCBxSAAA7z0lEQVR42u1dd4AV
 "use strict";
 
 /* ---------- constants ---------- */
+const nmSp = (n) => String(n == null ? "" : n).replace(/\s*[･·・]\s*/g, " · ");
 const TASK_STATUS = ["할 일", "진행 중", "완료"];
 const TASK_AREAS = ["초청·VIP", "프로그램·연사", "운영·의전", "문서·보고", "홍보", "기타"];
 const ISSUE_PRI = { red: "🔴 반드시 결정", amber: "🟡 확인 후 수정" };
@@ -1447,11 +1448,11 @@ function renderSeat() {
       rows.forEach((r) => { const k = normName(r[3]) || "#" + r[3] + "|" + r[4]; if (seen.has(k)) return; seen.add(k); ppl.push({ n: r[3], o: r[4], g: r[5], tb: at[k] }); });
       return `<h3>전체 명단 <span style="color:var(--muted);font-weight:400;font-size:13px">${ppl.length}명</span></h3><div style="max-height:640px;overflow:auto"><table class="seat-all" style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed"><colgroup><col style="width:96px"><col><col style="width:56px"></colgroup>` +
         `<tr style="position:sticky;top:0;background:#fff"><th style="text-align:left;padding:4px 6px">성명</th><th style="text-align:left;padding:4px 6px">소속</th><th style="padding:4px 6px;width:56px">테이블</th></tr>` +
-        ppl.map((p) => `<tr style="border-top:1px solid #eef0f4"><td style="padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.n)}"><span style="color:${SEAT_GC[seatGK(p.g)]}">●</span> ${esc(p.n)}</td><td style="padding:4px 6px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.o || "")}">${esc(p.o || "")}</td><td style="padding:4px 6px;text-align:center;font-weight:700">${esc(p.tb || "")}</td></tr>`).join("") + `</table></div>`;
+        ppl.map((p) => `<tr style="border-top:1px solid #eef0f4"><td style="padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.n)}"><span style="color:${SEAT_GC[seatGK(p.g)]}">●</span> ${esc(nmSp(p.n))}</td><td style="padding:4px 6px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(p.o || "")}">${esc(p.o || "")}</td><td style="padding:4px 6px;text-align:center;font-weight:700">${esc(p.tb || "")}</td></tr>`).join("") + `</table></div>`;
     }
     const st = T[sel] || {};
     return `<h3>${sel}번 테이블 <span style="color:var(--muted);font-weight:400;font-size:13px">${Object.keys(st).length}/8명</span></h3><ul class="seat-list">` +
-      [1, 2, 3, 4, 5, 6, 7, 8].map((k) => { const p = st[k]; return p ? `<li><span class="no">${k}</span><span class="dot" style="background:${SEAT_GC[seatGK(p.g)]}"></span><b>${esc(p.n)}</b><span class="org">${esc(p.o)}${p.m ? "<br>" + esc(p.m) : ""}</span></li>` : `<li><span class="no">${k}</span><span class="dot" style="border:1px solid #cfd5e1"></span><span style="color:#c3c8d4">빈 자리</span></li>`; }).join("") + `</ul>`;
+      [1, 2, 3, 4, 5, 6, 7, 8].map((k) => { const p = st[k]; return p ? `<li><span class="no">${k}</span><span class="dot" style="background:${SEAT_GC[seatGK(p.g)]}"></span><b>${esc(nmSp(p.n))}</b><span class="org">${esc(p.o)}${p.m ? "<br>" + esc(p.m) : ""}</span></li>` : `<li><span class="no">${k}</span><span class="dot" style="border:1px solid #cfd5e1"></span><span style="color:#c3c8d4">빈 자리</span></li>`; }).join("") + `</ul>`;
   })();
   el.innerHTML = `<div class="seat-top"><div class="seat-ev">${SEAT_EV.map((e, i) => `<button data-sev="${i}" class="${i === S.seatEv ? "on" : ""}">${e.label}</button>`).join("")}</div>
     <div class="seat-stats"><span>참석 예정 <b>${att.length}</b>명</span><span>배정 <b>${rows.length}</b>명</span><span>미배정 <b>${un.length}</b>명</span><span>필요 테이블 <b>${need}</b>개</span>
@@ -1599,7 +1600,7 @@ const repGB = (g) => /^Special/.test(g || "") ? "Special" : (g === "실무위원
 const REP_GORD = ["VVIP", "VIP", "Special", "실무", "동행", "구분 미정"];
 const repByGrade = (xs) => { const m = {}; xs.forEach((x) => { const g = repGB(x.g); (m[g] = m[g] || []).push(x); }); return [...REP_GORD, ...Object.keys(m).filter((g) => !REP_GORD.includes(g))].filter((g) => m[g]).map((g) => [g, m[g]]); };
 const repSortKo = (xs) => [...xs].sort((a, b) => String(a.n).localeCompare(String(b.n), "ko"));
-const repNamesTxt = (xs, star) => repByGrade(xs).map(([g, ys]) => `[${g}] ` + repSortKo(ys).map((x) => x.n + (star && x.c && x.c !== "확인 완료" ? "*" : "")).join(", ")).join(" / ");
+const repNamesTxt = (xs, star) => repByGrade(xs).map(([g, ys]) => `[${g}] ` + repSortKo(ys).map((x) => nmSp(x.n) + (star && x.c && x.c !== "확인 완료" ? "*" : "")).join(", ")).join(" / ");
 const REP_DAYS = [{ d: "15일", sub: "갈라디너", s: [["갈라디너", 0]] }, { d: "16일", sub: "개막식·일반세션", s: [["개막식", 1], ["개막 오찬", 2], ["일반세션 1-2", 3]] }, { d: "17일", sub: "특별세션·일반세션", s: [["특별세션", 4], ["2일차 오찬", 5], ["일반세션 3-4", 6]] }];
 const repDaySplit = (att) => {
   const days = REP_DAYS.map((D) => ({ ...D, xs: att.filter((x) => D.s.some(([, k]) => (x.d || "")[k] === "1")), cnt: D.s.map(([lab, k]) => [lab, att.filter((x) => (x.d || "")[k] === "1").length]) }));
@@ -1703,7 +1704,7 @@ function renderReport() {
   const matrix = `<div class="gtwrap${main.length === 3 ? " g3" : ""}">${main.map(gtable).join("")}</div>
     ${rest.length ? `<div class="rest">${rest.map((G) => `<span><b>${esc(G.g)}</b> 대상 ${G.total.all} · 발송 ${G.total.inv} · 참석 ${G.total.att} · 불참 ${G.total.dec}</span>`).join("")}</div>` : ""}`;
   // ② 이름: 등급별 한 줄, 칩 색 = 분야
-  const chip = (x) => `<span class="pn${x.c && x.c !== "확인 완료" ? " chk" : ""}" title="${esc(x.f + " · " + x.o + " " + (x.t || ""))}">${esc(x.n)}</span>`;
+  const chip = (x) => `<span class="pn${x.c && x.c !== "확인 완료" ? " chk" : ""}" title="${esc(x.f + " · " + x.o + " " + (x.t || ""))}">${esc(nmSp(x.n))}</span>`;
   const flow = (xs) => xs.length ? repByGrade(xs).map(([g, ys]) => `<div class="pl"><span class="pg pg-${esc(g).replace(/\s/g, "")}">${esc(g)}</span><span class="pns">${(g === "Special" ? [...repSortKo(ys.filter((x) => /VVIP$/.test(x.g))), ...repSortKo(ys.filter((x) => !/VVIP$/.test(x.g)))] : repSortKo(ys)).map(chip).join("")}</span></div>`).join("") : `<div class="z" style="font-size:12px">없음</div>`;
   const DS = repDaySplit(R.att);
   const usedF = [...new Set([...R.att, ...R.dec].map((x) => x.f))];
@@ -2209,7 +2210,7 @@ function renderGuests() {
     $("guestBody").innerHTML = list.length ? list.map((r) => `<tr>
       <td><span class="chip ${GRADE_CHIP[r.grade] || ""}">${esc(gFull(r))}</span></td>
       <td style="font-size:12px">${esc(r.field)}</td>
-      <td class="nm">${esc(r.name)}</td>
+      <td class="nm">${esc(nmSp(r.name))}</td>
       <td>${esc(r.org)}<span class="sub">${esc(r.title)}</span></td>
       <td style="font-size:12px">${esc(r.role)}</td>
       <td style="font-size:12px">${r.sent === "발송완료" ? `<span class="chip green">발송</span>` : `<span class="chip">${esc(r.sent || "-")}</span>`}<span class="sub">${esc(r.sentDate)}</span></td>
