@@ -2202,7 +2202,7 @@ function rsDay(rows,staff,prog,scols){
       st.forEach((x,d)=>tcs.push(rsCell(W,4+d,rown,rsBf(4+d,NC,pos,yel),[rsPara(x,RS_CP[x],W[4+d])],2300)));
       trs.push("<hp:tr>"+tcs.join("")+"</hp:tr>");rown++;no++;});}
   rsTblId++;
-  const t=`<hp:tbl id="${rsTblId}" zOrder="${rsTblId%100}" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="1" rowCnt="${rown}" colCnt="${NC}" cellSpacing="0" borderFillIDRef="4" noAdjust="1"><hp:sz width="48145" widthRelTo="ABSOLUTE" height="${1280+2300*(rown-1)}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="141" right="141" top="141" bottom="141"/><hp:inMargin left="510" right="510" top="140" bottom="140"/>${trs.join("")}</hp:tbl>`;
+  const t=`<hp:tbl id="${rsTblId}" zOrder="${rsTblId%100}" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="1" rowCnt="${rown}" colCnt="${NC}" cellSpacing="0" borderFillIDRef="4" noAdjust="1"><hp:sz width="48145" widthRelTo="ABSOLUTE" height="${1280+2300*(rown-1)}" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/><hp:outMargin left="141" right="141" top="141" bottom="141"/><hp:inMargin left="510" right="510" top="140" bottom="140"/>${trs.join("")}</hp:tbl>`;
   return [t,no-1,summ];
 }
 function rsNote(text){return `<hp:p id="2147483648" paraPrIDRef="41" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="51"><hp:t>${rsX(text)}</hp:t></hp:run>${rsLSA(48188)}</hp:p>`;}
@@ -2212,7 +2212,7 @@ async function buildRosterHwpx(rows,staff,stamp){
     const run=`<hp:run charPrIDRef="132"><hp:t>${rsX(`[별첨] ${lab} 참석 현황 (${stamp} 기준)`)}</hp:t></hp:run>${rsLSA(48188,1200)}</hp:p>`;
     body.push(di===0?run:`<hp:p id="2147483648" paraPrIDRef="41" styleIDRef="0" pageBreak="1" columnBreak="0" merged="0">`+run);
     body.push(rsNote(`○ ${n}명 (참석/초청) `+Object.entries(summ).map(([g,a])=>`${g} ${a[0]}/${a[1]}`).join(" │ ")));
-    body.push(`<hp:p id="0" paraPrIDRef="41" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="51">${t}<hp:t/></hp:run>${rsLSA(48188)}</hp:p>`);});
+    body.push(`<hp:p id="0" paraPrIDRef="41" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="51">${t}<hp:t/></hp:run>${rsLSA(0)}</hp:p>`);});
   body.push(rsNote("※ 참석 / 불참 / 미정(공문 발송 후 회신 대기) / 발송 전(공문 미발송) / –: 해당 프로그램 초청 대상 아님 · Special은 Special_VVIP·Special_VIP 합산"));
   body.push(rsNote("※ 내부 인원: 서울대 연구실·푸드테크학과·블루푸드테크학과·과천·밥스누(16·17일), 최고책임자과정(하루, 날짜 미정) · 노란 칸 = 이름·직책·참석일 확인 필요"));
   const src=await JSZip.loadAsync(b64ToBytes(TPL_ROSTER)),out=new JSZip();
