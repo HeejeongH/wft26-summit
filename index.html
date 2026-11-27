@@ -2284,7 +2284,7 @@ async function buildRosterHwpx(rows, staff, stamp) {
     const part = RS_PARTS.days[k];
     const t = rsDayTable(rows, staff, day, part);
     const att = t.summ.reduce((a, s) => a + s[1], 0);
-    sec += part.head.replace("@@SUM1@@", rsX(`○ 초청 ${t.total}명 중 참석 ${att}명`))
+    sec += part.head.replace("<hp:t>@@SUM1@@</hp:t>", '<hp:t><hp:markpenBegin color="#FFFF00"/>' + rsX(`○ 초청 ${t.total}명 중 참석 ${att}명`) + "<hp:markpenEnd/></hp:t>")
       .replace("@@SUM2@@", rsX(`   - ${t.summ.map((s) => `${s[0]} ${s[1]}/${s[2]}`).join(" · ")}  (참석/초청)`))
       + t.xml + part.after;
   });
