@@ -757,7 +757,7 @@ details.lv-d summary::-webkit-details-marker{display:none}
 .rep .dtab td{padding:3px 4px;border-bottom:1px solid #f1f3f7;text-align:right;white-space:nowrap}
 .rep .dtab td.b{font-weight:700}.rep .dtab tr.e td{color:#b6bccb}.rep .dtab .z{color:#c9ced9}
 .rep .dtab tr.tot td{border-top:1px solid #d5dbe7;border-bottom:0;font-weight:700}
-.rep .dtab.dall{font-size:13px}.rep .dtab.dall .dl{border-left:2px solid #d5dbe7;padding-left:10px !important}.rep .dtab.dall th.dh{text-align:left;font-size:14px;color:var(--ink);padding:6px 10px}.rep .dtab.dall th.dh .dsub{font-size:11px;font-weight:500;color:var(--muted);white-space:normal}.rep .dtab.dall td{padding:5px 6px}.rep .dtab.dall td:first-child{white-space:nowrap}
+.rep .dtab.dall{font-size:13px}.rep .dtab.dall .dl{border-left:2px solid #d5dbe7;padding-left:10px !important}.rep .dtab.dall th.dh{white-space:normal;text-align:left;font-size:14px;color:var(--ink);padding:6px 10px}.rep .dtab.dall th.dh .dsub{font-size:11px;font-weight:500;color:var(--muted);white-space:normal}.rep .dtab.dall td{padding:5px 6px}.rep .dtab.dall td:first-child{white-space:nowrap}
 .rep .nflow{border-top:1px dashed #e3e7ef;padding-top:4px}
 </style>
 <script>/* 보기 전용 사본: claude.ai 런타임 대신 저장된 스냅샷을 돌려줌 */
@@ -1793,7 +1793,7 @@ function renderReport() {
     const td = (n, b, first) => `<td class="${b ? "b" : ""}${first ? " dl" : ""}">${n ? n : '<span class="z">·</span>'}</td>`;
     const cells = (pick) => Ds.map((D) => { const xs = D.xs.filter(pick); return gs.map((g, i) => td(xs.filter((x) => cg(x) === g).length, 0, i === 0)).join("") + td(xs.length, 1); }).join("");
     const TG = R.tg, tgc = (n) => (TG ? `<td class="mut">${n || '<span class="z">·</span>'}</td>` : "");
-    const table = `<div style="overflow-x:auto"><table class="dtab dall"><thead>
+    const table = `<div style="overflow-x:auto"><table class="dtab dall" style="table-layout:fixed;min-width:${200 + (TG ? 52 : 0) + Ds.length * (gs.length + 1) * 46}px"><colgroup><col style="width:200px">${TG ? '<col style="width:52px">' : ""}${Ds.map(() => gs.map(() => "<col>").join("") + "<col>").join("")}</colgroup><thead>
       <tr><th rowspan="2">분야</th>${TG ? '<th rowspan="2" style="vertical-align:bottom">대상</th>' : ""}${Ds.map((D) => `<th class="dl dh" colspan="${gs.length + 1}"><b>${esc(D.d)}</b> <strong class="c-att">${D.xs.length}명</strong><div class="dsub">${D.cnt.length > 1 ? D.cnt.map(([l, n]) => `${esc(l)} ${n}`).join(" · ") : esc(D.sub)}</div></th>`).join("")}</tr>
       <tr>${Ds.map(() => gs.map((g, i) => `<th${i === 0 ? ' class="dl"' : ""}>${esc(g)}</th>`).join("") + "<th>계</th>").join("")}</tr></thead><tbody>
       ${fs.map((f) => `<tr${all.some((x) => rk(x) === f) ? "" : ' class="e"'}><td>${esc(repLab(f))}</td>${tgc(TG && TG[f])}${cells((x) => rk(x) === f)}</tr>` + (f === IN ? subs.map((k) => `<tr class="sub"><td style="padding-left:18px;color:var(--muted)">└ ${esc(k)}</td>${tgc(TG && TG[IN + "/" + k])}${cells((x) => x.f === IN && sk(x) === k)}</tr>`).join("") : "")).join("")}
