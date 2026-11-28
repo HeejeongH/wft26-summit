@@ -1644,7 +1644,7 @@ function buildReport(rows, mode, by) {
     v: 3, sp: 1, date: today, at: Date.now(), mode: mode || "manual", by: by || null,
     grades, fields: byField(list), total: agg(list),
     tg: (() => { const m = {}; list.forEach((r) => { const k = r.g === "실무위원회" ? "실무위원회" : r.field; m[k] = (m[k] || 0) + 1; if (r.g === "내부") { const q = "내부 인원/" + (r.sub || "기타"); m[q] = (m[q] || 0) + 1; } }); return m; })(),
-    inner: (() => { const O = ["밥스누", "최고책임자과정", "블루푸드테크학과", "푸드테크학과", "과천센터", "서울대 연구실"], rs = list.filter((r) => r.g === "내부");
+    inner: (() => { const O = ["WFT 회원기관", "최고책임자과정", "졸업생", "블루푸드테크학과", "푸드테크학과", "과천센터", "밥스누", "서울대 연구실"], rs = list.filter((r) => r.g === "내부");
       return [...O, ...[...new Set(rs.map((r) => r.sub || "기타"))].filter((k) => !O.includes(k))].map((k) => { const x = rs.filter((r) => (r.sub || "기타") === k); return { k, all: x.length, att: x.filter((r) => r.attend === "참석확정").length }; }).filter((x) => x.all); })(),
     today: list.filter((r) => r.sent === "발송완료" && repIsDay(r.sentDate, today)).map(p),
     att: list.filter((r) => r.attend === "참석확정").map(p),
@@ -1769,7 +1769,7 @@ function renderReport() {
   const NAME_MAX = 12;
   const colBody = (xs) => {
     if (!xs.length) return `<div class="zero" style="font-size:12px">없음</div>`;
-    const rk = (x) => (repGB(x.g) === "실무" ? "실무위원회" : x.f), IN = "내부 인원", IO = ["밥스누", "최고책임자과정", "블루푸드테크학과", "푸드테크학과", "과천센터", "서울대 연구실"];
+    const rk = (x) => (repGB(x.g) === "실무" ? "실무위원회" : x.f), IN = "내부 인원", IO = ["WFT 회원기관", "최고책임자과정", "졸업생", "블루푸드테크학과", "푸드테크학과", "과천센터", "밥스누", "서울대 연구실"];
     const fs = [...REP_FIELDS, ...[...new Set(xs.map(rk))].filter((f) => !REP_FIELDS.includes(f) && f !== "실무위원회" && f !== IN), "실무위원회", ...(xs.some((x) => x.f === IN) ? [IN] : [])];
     const subs = [...IO, ...[...new Set(xs.filter((x) => x.f === IN).map((x) => x.s || "기타"))].filter((k) => !IO.includes(k))].filter((k) => xs.some((x) => x.f === IN && (x.s || "기타") === k));
     const scnt = (k, g) => xs.filter((x) => x.f === IN && (x.s || "기타") === k && (g == null || repGB(x.g) === g)).length;
@@ -1784,10 +1784,10 @@ function renderReport() {
   };
   const days = (() => {
     const Ds = DS.days, all = Ds.flatMap((D) => D.xs);
-    const rk = (x) => (repGB(x.g) === "실무" ? "실무위원회" : x.f), IN = "내부 인원", IO = ["밥스누", "최고책임자과정", "블루푸드테크학과", "푸드테크학과", "과천센터", "서울대 연구실"];
+    const rk = (x) => (repGB(x.g) === "실무" ? "실무위원회" : x.f), IN = "내부 인원", IO = ["WFT 회원기관", "최고책임자과정", "졸업생", "블루푸드테크학과", "푸드테크학과", "과천센터", "밥스누", "서울대 연구실"];
     const sk = (x) => x.s || "기타";
     const fs = [...REP_FIELDS, ...[...new Set(all.map(rk))].filter((f) => !REP_FIELDS.includes(f) && f !== "실무위원회" && f !== IN), "실무위원회", ...(all.some((x) => x.f === IN) ? [IN] : [])];
-    const subs = [...IO, ...[...new Set(all.filter((x) => x.f === IN).map(sk))].filter((k) => !IO.includes(k))].filter((k) => all.some((x) => x.f === IN && sk(x) === k) || (R.tg && R.tg[IN + "/" + k]));
+    const subs = [...IO, ...[...new Set(all.filter((x) => x.f === IN).map(sk))].filter((k) => !IO.includes(k))].filter((k) => all.some((x) => x.f === IN && sk(x) === k) || (R.tg && R.tg[IN + "/" + k]) || k === "WFT 회원기관" || k === "졸업생");
     const cg = (x) => { const g = repGB(x.g); return g === "실무" ? "내부" : g; };
     const gs = ["VVIP", "VIP", "Special", ...["동행", "내부"].filter((g) => all.some((x) => cg(x) === g)), ...[...new Set(all.map(cg))].filter((g) => !["VVIP", "VIP", "Special", "동행", "내부"].includes(g))];
     const td = (n, b, first) => `<td class="${b ? "b" : ""}${first ? " dl" : ""}">${n ? n : '<span class="z">·</span>'}</td>`;
@@ -2247,7 +2247,7 @@ const RS_FIELD_ORDER = ["WFT 조직위", "국회", "정부·지자체", "기업�
 const RS_GRADES = [["VVIP", ["VVIP"]], ["VIP", ["VIP"]], ["Special", ["Special_VVIP", "Special_VIP"]], ["실무위원", ["실무위원회"]], ["동행", ["동행"]]];
 const RS_DAYS = [{ cols: [17], scols: [] }, { cols: [18, 19, 20], scols: [4, 5, 6] }, { cols: [21, 22, 23], scols: [7, 8, 9] }];
 const RS_SGRP = [["서울대 연구실", ["서울대 연구실(학생)", "서울대 연구실(선생님)"]], ["푸드테크학과", ["푸드테크학과(3기)"]], ["블루푸드테크학과", ["블루푸드테크학과(1기)"]],
-  ["과천", ["과천"]], ["밥스누", ["밥스누"]], ["최고책임자과정", ["최고책임자과정(하루)"]]];
+  ["과천", ["과천"]], ["밥스누", ["밥스누"]], ["최고책임자과정", ["최고책임자과정(하루)"]], ["졸업생", ["졸업생"]], ["WFT 회원기관", ["WFT 회원기관"]]];
 
 function rsX(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 function rsT(s) { return String(s).split("\n").map(rsX).join("<hp:lineBreak/>"); }
@@ -2407,7 +2407,7 @@ function rsDayTable(rows, staff, day, part) {
   return { xml: open + out.join(""), total: no - 1, summ };
 }
 // 표지 쪽 요약표: 분야(＋실무위원회·내부 인원 하위 그룹) × 날짜별 등급(VVIP·VIP·Special·동행·내부) 참석 인원, 대상 포함
-const RS_CV_SUB = [["밥스누", ["밥스누"]], ["최고책임자과정", ["최고책임자과정(하루)"]], ["블루푸드테크학과", ["블루푸드테크학과(1기)"]], ["푸드테크학과", ["푸드테크학과(3기)"]], ["과천센터", ["과천"]], ["서울대 연구실", ["서울대 연구실(학생)", "서울대 연구실(선생님)"]]];
+const RS_CV_SUB = [["WFT 회원기관", ["WFT 회원기관"]], ["최고책임자과정", ["최고책임자과정(하루)", "최고책임자과정"]], ["졸업생", ["졸업생"]], ["블루푸드테크학과", ["블루푸드테크학과(1기)"]], ["푸드테크학과", ["푸드테크학과(3기)"]], ["과천센터", ["과천", "과천센터"]], ["밥스누", ["밥스누"]], ["서울대 연구실", ["서울대 연구실(학생)", "서울대 연구실(선생님)"]]];
 const RS_CV_G = ["VVIP", "VIP", "Special", "동행", "내부"];
 function rsCoverTable(rows, staff) {
   const part = RS_PARTS.days[0], H = rsTcs(part.hdr)[1], B = rsTcs(part.person)[1], Lc = rsTcs(part.person)[2];
@@ -2430,7 +2430,7 @@ function rsCoverTable(rows, staff) {
   }
   // 미리 정해 둔 분야 말고 다른 분야 줄이 여럿이면 같은 이름끼리 합침
   const Fm = []; F.forEach((R) => { const e = Fm.find((x) => x.label === R.label); if (!e) Fm.push(R); else { e.tg += R.tg; R.tot.forEach((v, k) => { e.tot[k] += v; R.n[k].forEach((w, j) => (e.n[k][j] += w)); }); } });
-  const list = [...Fm, SW, IN, ...SUBS.filter((x) => x.tg), TOT];
+  const list = [...Fm, SW, IN, ...SUBS.filter((x) => x.tg || x.label === "WFT 회원기관" || x.label === "졸업생"), TOT];
   const W0 = 8900, W1 = 3413, WC = 1990, NG = RS_CV_G.length + 1;  // 8900 + 3413 + 18×1990 = 48133
   const cell = (tpl, o) => {
     let tc = tpl.replace(/<hp:cellSz width="\d+"/, `<hp:cellSz width="${o.w}"`).replace(/colAddr="\d+"/, `colAddr="${o.c}"`)
