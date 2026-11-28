@@ -2217,7 +2217,8 @@ function rsStatus(r, cols) {
   const anyAtt = all.includes("참석");
   return cols.map((c) => {
     const v = rsNorm(r[c]);
-    if (v === "참석") return "참석"; if (v === "해당없음") return "–"; if (v === "불참") return "불참";
+    if (v === "참석") return "참석";
+    if (c === 17 && !["VVIP", "Special_VVIP"].includes(String(r[1] || "").trim())) return "–";  // 갈라디너는 VVIP·Special_VVIP만 대상 — 다른 등급은 칸에 뭐가 적혀 있어도 뺌(참석 확정만 예외) if (v === "해당없음") return "–"; if (v === "불참") return "불참";
     if (anyAtt) return "불참";
     if (String(r[16] || "").trim().startsWith("참석")) return "미정";  // 참석확정인데 세션 미입력 → 공문은 이미 받은 사람
     return String(r[9] || "").trim() === "발송완료" ? "미정" : "발송 전";
