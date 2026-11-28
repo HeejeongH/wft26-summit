@@ -757,6 +757,7 @@ details.lv-d summary::-webkit-details-marker{display:none}
 .rep .dtab td{padding:3px 4px;border-bottom:1px solid #f1f3f7;text-align:right;white-space:nowrap}
 .rep .dtab td.b{font-weight:700}.rep .dtab tr.e td{color:#b6bccb}.rep .dtab .z{color:#c9ced9}
 .rep .dtab tr.tot td{border-top:1px solid #d5dbe7;border-bottom:0;font-weight:700}
+.rep .dtab.dall{font-size:13px}.rep .dtab.dall .dl{border-left:2px solid #d5dbe7;padding-left:10px !important}.rep .dtab.dall th.dh{text-align:left;font-size:14px;color:var(--ink);padding:6px 10px}.rep .dtab.dall th.dh .dsub{font-size:11px;font-weight:500;color:var(--muted);white-space:normal}.rep .dtab.dall td{padding:5px 6px}.rep .dtab.dall td:first-child{white-space:nowrap}
 .rep .nflow{border-top:1px dashed #e3e7ef;padding-top:4px}
 </style>
 <script>/* 보기 전용 사본: claude.ai 런타임 대신 저장된 스냅샷을 돌려줌 */
@@ -1776,23 +1777,24 @@ function renderReport() {
   const legend = `<div class="legend">${REP_FIELDS.concat(usedF.filter((f) => !REP_FIELDS.includes(f))).filter((f) => usedF.includes(f)).map((f) => { const [bg, fg] = repColor(f); return `<span><i style="background:${fg}"></i>${esc(repLab(f))}</span>`; }).join("")}</div>`;
   const dcol = (head, n, sub, body, cls) => `<div class="dcol ${cls || ""}"><div class="dhead"><b>${head}</b><strong>${n}명</strong></div>${sub ? `<div class="dsub">${sub}</div>` : ""}${body}</div>`;
   const NAME_MAX = 12;
-  const colBody = (xs) => {
-    if (!xs.length) return `<div class="zero" style="font-size:12px">없음</div>`;
+  const days = (() => {
+    const Ds = DS.days, all = Ds.flatMap((D) => D.xs);
     const rk = (x) => (repGB(x.g) === "실무" ? "실무위원회" : x.f), IN = "내부 인원", IO = ["밥스누", "최고책임자과정", "블루푸드테크학과", "푸드테크학과", "과천센터", "서울대 연구실"];
-    const fs = [...REP_FIELDS, ...[...new Set(xs.map(rk))].filter((f) => !REP_FIELDS.includes(f) && f !== "실무위원회" && f !== IN), "실무위원회", ...(xs.some((x) => x.f === IN) ? [IN] : [])];
-    const subs = [...IO, ...[...new Set(xs.filter((x) => x.f === IN).map((x) => x.s || "기타"))].filter((k) => !IO.includes(k))].filter((k) => xs.some((x) => x.f === IN && (x.s || "기타") === k));
-    const scnt = (k, g) => xs.filter((x) => x.f === IN && (x.s || "기타") === k && (g == null || repGB(x.g) === g)).length;
+    const sk = (x) => x.s || "기타";
+    const fs = [...REP_FIELDS, ...[...new Set(all.map(rk))].filter((f) => !REP_FIELDS.includes(f) && f !== "실무위원회" && f !== IN), "실무위원회", ...(all.some((x) => x.f === IN) ? [IN] : [])];
+    const subs = [...IO, ...[...new Set(all.filter((x) => x.f === IN).map(sk))].filter((k) => !IO.includes(k))].filter((k) => all.some((x) => x.f === IN && sk(x) === k));
     const gs = [...REP_GORD.slice(0, 4), ...[...new Set([...R.att, ...R.dec].map((x) => repGB(x.g)))].filter((g) => !REP_GORD.slice(0, 4).includes(g))];
-    const cnt = (f, g) => xs.filter((x) => (f == null || rk(x) === f) && (g == null || repGB(x.g) === g)).length;
-    const td = (n, b) => `<td${b ? ' class="b"' : ""}>${n ? n : '<span class="z">·</span>'}</td>`;
-    const counts = `<table class="dtab"><thead><tr><th>분야</th>${gs.map((g) => `<th>${esc(g)}</th>`).join("")}<th>계</th></tr></thead><tbody>
-      ${fs.map((f) => `<tr${cnt(f) ? "" : ' class="e"'}><td>${esc(repLab(f))}</td>${gs.map((g) => td(cnt(f, g))).join("")}${td(cnt(f), 1)}</tr>` + (f === IN ? subs.map((k) => `<tr class="sub"><td style="padding-left:18px;color:var(--muted);font-size:.92em">└ ${esc(k)}</td>${gs.map((g) => td(scnt(k, g))).join("")}${td(scnt(k))}</tr>`).join("") : "")).join("")}
-      <tr class="tot"><td>합계</td>${gs.map((g) => td(cnt(null, g), 1)).join("")}${td(xs.length, 1)}</tr></tbody></table>`;
-    if (xs.length <= NAME_MAX) return counts + `<div class="nflow">${flow(xs)}</div>`;
-    return counts + `<details class="nfold"><summary>명단 ${xs.length}명 · 펼치기</summary>${flow(xs)}</details>`;
-  };
-  const days = `<div class="dgrid3">${DS.days.map((D) => dcol(D.d, D.xs.length, D.cnt.length > 1 ? D.cnt.map(([l, n]) => `${l} ${n}`).join(" · ") : D.sub, colBody(D.xs))).join("")}</div>
+    const td = (n, b, first) => `<td class="${b ? "b" : ""}${first ? " dl" : ""}">${n ? n : '<span class="z">·</span>'}</td>`;
+    const cells = (pick) => Ds.map((D) => { const xs = D.xs.filter(pick); return gs.map((g, i) => td(xs.filter((x) => repGB(x.g) === g).length, 0, i === 0)).join("") + td(xs.length, 1); }).join("");
+    const table = `<div style="overflow-x:auto"><table class="dtab dall"><thead>
+      <tr><th rowspan="2">분야</th>${Ds.map((D) => `<th class="dl dh" colspan="${gs.length + 1}"><b>${esc(D.d)}</b> <strong class="c-att">${D.xs.length}명</strong><div class="dsub">${D.cnt.length > 1 ? D.cnt.map(([l, n]) => `${esc(l)} ${n}`).join(" · ") : esc(D.sub)}</div></th>`).join("")}</tr>
+      <tr>${Ds.map(() => gs.map((g, i) => `<th${i === 0 ? ' class="dl"' : ""}>${esc(g)}</th>`).join("") + "<th>계</th>").join("")}</tr></thead><tbody>
+      ${fs.map((f) => `<tr${all.some((x) => rk(x) === f) ? "" : ' class="e"'}><td>${esc(repLab(f))}</td>${cells((x) => rk(x) === f)}</tr>` + (f === IN ? subs.map((k) => `<tr class="sub"><td style="padding-left:18px;color:var(--muted)">└ ${esc(k)}</td>${cells((x) => x.f === IN && sk(x) === k)}</tr>`).join("") : "")).join("")}
+      <tr class="tot"><td>합계</td>${cells(() => true)}</tr></tbody></table></div>`;
+    const lists = Ds.map((D) => D.xs.length ? `<details class="nfold"><summary>${esc(D.d)} 명단 ${D.xs.length}명 · 펼치기</summary>${flow(D.xs)}</details>` : "").join("");
+    return `<div class="dcol">${table}${lists}</div>
     ${DS.none.length ? `<div class="dnone">일자 미정 ${DS.none.length}명 · <span class="pns">${repSortKo(DS.none).map(chip).join("")}</span> <span class="z">(S~Y열 날짜 미입력)</span></div>` : ""}`;
+  })();
   const todF = repGroup(R.today).map(([f, xs]) => `${f} ${xs.length}`).join(" · ");
   const T = R.total;
   el.innerHTML = `<h3>📋 일일 초청 현황 보고 <span class="meta">${esc(R.date)} ${hm} 기준 · ${R.mode === "auto" ? "자동 갱신" : "시트에서 불러옴"}${stale ? ` · <span style="color:var(--red)">오늘 것이 아니에요</span>` : ""}</span>
