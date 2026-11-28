@@ -2396,8 +2396,64 @@ function rsDayTable(rows, staff, day, part) {
   const open = part.tblopen.replace(/rowCnt="\d+"/, `rowCnt="${row}"`).replace(/(<hp:sz width="\d+" widthRelTo="ABSOLUTE" height=")\d+"/, `$1${height}"`);
   return { xml: open + out.join(""), total: no - 1, summ };
 }
+// 표지 쪽 요약표: 분야(＋실무위원회·내부 인원 하위 그룹) × 날짜별 등급(VVIP·VIP·Special·동행·내부) 참석 인원, 대상 포함
+const RS_CV_SUB = [["밥스누", ["밥스누"]], ["최고책임자과정", ["최고책임자과정(하루)"]], ["블루푸드테크학과", ["블루푸드테크학과(1기)"]], ["푸드테크학과", ["푸드테크학과(3기)"]], ["과천센터", ["과천"]], ["서울대 연구실", ["서울대 연구실(학생)", "서울대 연구실(선생님)"]]];
+const RS_CV_G = ["VVIP", "VIP", "Special", "동행", "내부"];
+function rsCoverTable(rows, staff) {
+  const part = RS_PARTS.days[0], H = rsTcs(part.hdr)[1], B = rsTcs(part.person)[1], Lc = rsTcs(part.person)[2];
+  const gOf = (g) => (g === "VVIP" || g === "VIP" ? g : /^Special/.test(g) ? "Special" : g === "동행" ? "동행" : g === "실무위원회" ? "내부" : "");
+  const z = () => RS_DAYS.map(() => RS_CV_G.map(() => 0));
+  const mk = (label, sub) => ({ label, sub: !!sub, tg: 0, n: z(), tot: RS_DAYS.map(() => 0) });
+  const F = RS_FIELD_ORDER.map((f) => mk(REP_LABEL[f] || f)), SW = mk("실무위원회"), IN = mk("내부 인원"), SUBS = RS_CV_SUB.map(([l]) => mk(l, true)), TOT = mk("합계");
+  const add = (R, k, gi) => { R.tot[k]++; TOT.tot[k]++; if (gi >= 0) { R.n[k][gi]++; TOT.n[k][gi]++; } };
+  for (const r of rows) {
+    if (!String(r[4] || "").trim() && !String(r[5] || "").trim()) continue;
+    const g = String(r[1] || "").trim(); let R = g === "실무위원회" ? SW : F[RS_FIELD_ORDER.indexOf(String(r[3] || "").trim())];
+    if (!R) { R = mk(String(r[3] || "").trim() || "(분야 미입력)"); F.push(R); }
+    R.tg++; TOT.tg++;
+    RS_DAYS.forEach((day, k) => { if (rsStatus(r, day.cols).includes("참석")) add(R, k, RS_CV_G.indexOf(gOf(g))); });
+  }
+  for (const s of staff) {
+    if (!s[1]) continue; const i = RS_CV_SUB.findIndex(([, gs]) => gs.includes(String(s[0] || "").trim())); if (i < 0) continue;
+    IN.tg++; SUBS[i].tg++; TOT.tg++;
+    RS_DAYS.forEach((day, k) => { if (day.scols.some((c) => rsTrue(s[c]))) { IN.tot[k]++; IN.n[k][4]++; SUBS[i].tot[k]++; SUBS[i].n[k][4]++; TOT.tot[k]++; TOT.n[k][4]++; } });
+  }
+  // 미리 정해 둔 분야 말고 다른 분야 줄이 여럿이면 같은 이름끼리 합침
+  const Fm = []; F.forEach((R) => { const e = Fm.find((x) => x.label === R.label); if (!e) Fm.push(R); else { e.tg += R.tg; R.tot.forEach((v, k) => { e.tot[k] += v; R.n[k].forEach((w, j) => (e.n[k][j] += w)); }); } });
+  const list = [...Fm, SW, IN, ...SUBS.filter((x) => x.tg), TOT];
+  const W0 = 8900, W1 = 3413, WC = 1990, NG = RS_CV_G.length + 1;  // 8900 + 3413 + 18×1990 = 48133
+  const cell = (tpl, o) => {
+    let tc = tpl.replace(/<hp:cellSz width="\d+"/, `<hp:cellSz width="${o.w}"`).replace(/colAddr="\d+"/, `colAddr="${o.c}"`)
+      .replace(/<hp:cellSpan colSpan="\d+" rowSpan="\d+"\/>/, `<hp:cellSpan colSpan="${o.cs || 1}" rowSpan="${o.rs || 1}"/>`)
+      .replace(/<hp:cellMargin [^>]*\/>/, '<hp:cellMargin left="170" right="170" top="141" bottom="141"/>').replace(/ header="1"/, ' header="0"');
+    tc = rsSetCell(tc, { bf: o.bf, text: o.text, cp: o.cp, row: o.r, h: o.h, fit: !!o.fit });
+    return tc;
+  };
+  const dayNm = ["15일 갈라디너", "16일 (1일차)", "17일 (2일차)"], trs = [];
+  let r0 = cell(H, { w: W0, c: 0, r: 0, rs: 2, bf: "10", text: "분야", cp: "44", h: 2900 }) + cell(H, { w: W1, c: 1, r: 0, rs: 2, bf: "10", text: "대상", cp: "44", h: 2900 });
+  RS_DAYS.forEach((d, k) => { r0 += cell(H, { w: WC * NG, c: 2 + k * NG, r: 0, cs: NG, bf: "10", text: `${dayNm[k]}  ${TOT.tot[k]}명`, cp: "44", h: 1500 }); });
+  trs.push(r0);
+  let r1 = ""; RS_DAYS.forEach((d, k) => { [...RS_CV_G, "계"].forEach((g, j) => { r1 += cell(H, { w: WC, c: 2 + k * NG + j, r: 1, bf: "10", text: g, cp: "60", fit: true, h: 1400 }); }); });
+  trs.push(r1);
+  list.forEach((R, i) => {
+    const row = i + 2, tot = R === TOT, h = 1400, bf = tot ? "10" : "12";
+    let tr = cell(Lc, { w: W0, c: 0, r: row, bf, text: (R.sub ? "   └ " : "") + R.label, cp: tot ? "44" : R.sub || R.label.length > 8 ? "60" : "41", fit: true, h })
+      + cell(B, { w: W1, c: 1, r: row, bf, text: R.tg || "·", cp: tot ? "44" : "56", h });
+    RS_DAYS.forEach((d, k) => {
+      R.n[k].forEach((v, j) => { tr += cell(B, { w: WC, c: 2 + k * NG + j, r: row, bf, text: v || "·", cp: v ? (tot ? "44" : "41") : "57", h }); });
+      tr += cell(B, { w: WC, c: 2 + k * NG + RS_CV_G.length, r: row, bf, text: R.tot[k] || "·", cp: R.tot[k] ? "44" : "57", h });
+    });
+    trs.push(tr);
+  });
+  const height = 2900 + list.length * 1400;
+  const open = part.tblopen.replace(/ id="\d+"/, ' id="1244854390"').replace(/rowCnt="\d+"/, `rowCnt="${list.length + 2}"`).replace(/colCnt="\d+"/, 'colCnt="20"').replace(/repeatHeader="1"/, 'repeatHeader="0"')
+    .replace(/(<hp:sz width=")\d+(" widthRelTo="ABSOLUTE" height=")\d+"/, `$1${W0 + W1 + WC * NG * 3}$2${height}"`);
+  return `<hp:p id="2147483648" paraPrIDRef="34" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="44">` + open + trs.map((t) => "<hp:tr>" + t + "</hp:tr>").join("") + part.after;
+}
 async function buildRosterHwpx(rows, staff, stamp) {
   let sec = RS_PARTS.cover.replace("@@STAMP@@", rsX(`(${stamp} 기준)`));
+  { const blank = '<hp:p id="0" paraPrIDRef="31" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="37"/></hp:p>'; for (let i = 0; i < 4; i++) sec = sec.replace(blank, ""); sec += blank; }
+  try { sec += rsCoverTable(rows, staff); } catch (e) { console.warn("표지 요약표 생략", e); }
   RS_DAYS.forEach((day, k) => {
     const part = RS_PARTS.days[k];
     const t = rsDayTable(rows, staff, day, part);
