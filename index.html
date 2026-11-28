@@ -1617,7 +1617,7 @@ function repStaffRows(st) {
   return (st || []).filter((s) => String(s[1] || "").trim() && String(s[0] || "").trim()).map((s) => {
     const grp = String(s[0]).replace(/\(.*\)$/, "").trim(), bits = [3, 4, 5, 6, 7, 8, 9].map((c) => (T(s[c]) ? "1" : "-")).join("");
     const nm = String(s[1]).trim();
-    return { name: nm.startsWith("(") ? grp + " (예정)" : nm.replace("(이마트)", ""), org: String(s[2] || grp).trim(), title: "", field: "내부 인원", grade: "내부", gfull: "내부",
+    return { name: nm.startsWith("(") ? grp + " (예정)" : nm.replace("(이마트)", ""), org: String(s[2] || grp).trim(), title: "", field: "내부 인원", grade: "내부", gfull: "내부", sub: grp === "과천" ? "과천센터" : grp,
       sent: "", sentDate: "", attend: /1/.test(bits) ? "참석확정" : "미정", days: bits, check: "", src: "staff" };
   });
 }
@@ -1642,6 +1642,8 @@ function buildReport(rows, mode, by) {
   return {
     v: 3, sp: 1, date: today, at: Date.now(), mode: mode || "manual", by: by || null,
     grades, fields: byField(list), total: agg(list),
+    inner: (() => { const O = ["밥스누", "최고책임자과정", "블루푸드테크학과", "푸드테크학과", "과천센터", "서울대 연구실"], rs = list.filter((r) => r.g === "내부");
+      return [...O, ...[...new Set(rs.map((r) => r.sub || "기타"))].filter((k) => !O.includes(k))].map((k) => { const x = rs.filter((r) => (r.sub || "기타") === k); return { k, all: x.length, att: x.filter((r) => r.attend === "참석확정").length }; }).filter((x) => x.all); })(),
     today: list.filter((r) => r.sent === "발송완료" && repIsDay(r.sentDate, today)).map(p),
     att: list.filter((r) => r.attend === "참석확정").map(p),
     dec: list.filter((r) => r.attend === "불참").map(p),
@@ -1755,7 +1757,8 @@ function renderReport() {
   const rest = MG.filter((G) => !["KEY", "VVIP", "VIP"].includes(G.g));
   UF = REP_FIELDS.concat(main.flatMap((G) => G.fields.map((x) => x.f)).filter((f) => !REP_FIELDS.includes(f))).filter((f, i, a) => a.indexOf(f) === i && main.some((G) => G.fields.some((x) => x.f === f)));
   const matrix = `<div class="gtwrap${main.length === 3 ? " g3" : ""}">${main.map(gtable).join("")}</div>
-    ${rest.length ? `<div class="rest">${rest.map((G) => `<span><b>${esc(G.g)}</b> 대상 ${G.total.all} · 발송 ${G.total.inv} · 참석 ${G.total.att} · 불참 ${G.total.dec}</span>`).join("")}</div>` : ""}`;
+    ${rest.length ? `<div class="rest">${rest.filter((G) => !(G.g === "내부" && (R.inner || []).length)).map((G) => `<span><b>${esc(G.g)}</b> 대상 ${G.total.all} · 발송 ${G.total.inv} · 참석 ${G.total.att} · 불참 ${G.total.dec}</span>`).join("")}</div>` : ""}
+    ${(R.inner || []).length ? `<div class="rest" style="margin-top:6px"><span><b>내부</b> 대상 ${R.inner.reduce((a, x) => a + x.all, 0)} · 참석 ${R.inner.reduce((a, x) => a + x.att, 0)}</span>${R.inner.map((x) => `<span><b>${esc(x.k)}</b> 대상 ${x.all} · 참석 ${x.att}</span>`).join("")}</div>` : ""}`;
   // ② 이름: 등급별 한 줄, 칩 색 = 분야
   const chip = (x) => `<span class="pn${x.c && x.c !== "확인 완료" ? " chk" : ""}" title="${esc(x.f + " · " + x.o + " " + (x.t || ""))}">${esc(nmSp(x.n))}</span>`;
   const flow = (xs) => xs.length ? repByGrade(xs).map(([g, ys]) => `<div class="pl"><span class="pg pg-${esc(g).replace(/\s/g, "")}">${esc(g)}</span><span class="pns">${(g === "Special" ? [...repSortKo(ys.filter((x) => /VVIP$/.test(x.g))), ...repSortKo(ys.filter((x) => !/VVIP$/.test(x.g)))] : repSortKo(ys)).map(chip).join("")}</span></div>`).join("") : `<div class="z" style="font-size:12px">없음</div>`;
