@@ -1798,9 +1798,10 @@ function renderReport() {
     const sk = (x) => x.s || "기타";
     const fs = [...REP_FIELDS, ...[...new Set(all.map(rk))].filter((f) => !REP_FIELDS.includes(f) && f !== "실무위원회" && f !== IN), "실무위원회", ...(all.some((x) => x.f === IN) ? [IN] : [])];
     const subs = [...IO, ...[...new Set(all.filter((x) => x.f === IN).map(sk))].filter((k) => !IO.includes(k))].filter((k) => all.some((x) => x.f === IN && sk(x) === k));
-    const gs = [...REP_GORD.slice(0, 4), ...[...new Set([...R.att, ...R.dec].map((x) => repGB(x.g)))].filter((g) => !REP_GORD.slice(0, 4).includes(g))];
+    const cg = (x) => { const g = repGB(x.g); return g === "실무" ? "내부" : g; };
+    const gs = ["VVIP", "VIP", "Special", ...["동행", "내부"].filter((g) => all.some((x) => cg(x) === g)), ...[...new Set(all.map(cg))].filter((g) => !["VVIP", "VIP", "Special", "동행", "내부"].includes(g))];
     const td = (n, b, first) => `<td class="${b ? "b" : ""}${first ? " dl" : ""}">${n ? n : '<span class="z">·</span>'}</td>`;
-    const cells = (pick) => Ds.map((D) => { const xs = D.xs.filter(pick); return gs.map((g, i) => td(xs.filter((x) => repGB(x.g) === g).length, 0, i === 0)).join("") + td(xs.length, 1); }).join("");
+    const cells = (pick) => Ds.map((D) => { const xs = D.xs.filter(pick); return gs.map((g, i) => td(xs.filter((x) => cg(x) === g).length, 0, i === 0)).join("") + td(xs.length, 1); }).join("");
     const table = `<div style="overflow-x:auto"><table class="dtab dall"><thead>
       <tr><th rowspan="2">분야</th>${Ds.map((D) => `<th class="dl dh" colspan="${gs.length + 1}"><b>${esc(D.d)}</b> <strong class="c-att">${D.xs.length}명</strong><div class="dsub">${D.cnt.length > 1 ? D.cnt.map(([l, n]) => `${esc(l)} ${n}`).join(" · ") : esc(D.sub)}</div></th>`).join("")}</tr>
       <tr>${Ds.map(() => gs.map((g, i) => `<th${i === 0 ? ' class="dl"' : ""}>${esc(g)}</th>`).join("") + "<th>계</th>").join("")}</tr></thead><tbody>
