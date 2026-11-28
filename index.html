@@ -18,8 +18,8 @@ html,body{margin:0;height:100%}
 body{font-family:"Noto Sans KR",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-.app{display:grid;grid-template-columns:210px 1fr;grid-template-rows:auto 1fr;height:100vh}
-.app.agent-open{grid-template-columns:210px 1fr 420px}
+.app{display:grid;grid-template-columns:150px 1fr;grid-template-rows:auto 1fr;height:100vh}
+.app.agent-open{grid-template-columns:150px 1fr 420px}
 header{grid-column:1/-1;background:var(--navy);color:#fff;display:flex;align-items:center;gap:18px;padding:12px 20px}
 header h1{font-size:16px;margin:0;font-weight:800;letter-spacing:-.01em}
 header .sub{font-size:12px;opacity:.75}
@@ -29,8 +29,8 @@ header .dday{display:flex;gap:8px;margin-left:auto}
 .me{display:flex;align-items:center;gap:8px;font-size:12px}
 .me img{width:26px;height:26px;border-radius:50%}
 .agent-toggle{background:#fff;color:var(--navy);border:0;border-radius:8px;padding:7px 12px;font-weight:700;font-size:13px}
-nav{background:#fff;border-right:1px solid var(--line);padding:14px 10px;overflow:auto}
-nav button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:none;padding:9px 12px;border-radius:8px;text-align:left;color:var(--muted);font-weight:500}
+nav{background:#fff;border-right:1px solid var(--line);padding:12px 6px;overflow:auto}
+nav button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:none;padding:8px 8px;white-space:nowrap;border-radius:8px;text-align:left;color:var(--muted);font-weight:500}
 nav button:hover{background:var(--bg)}
 nav button.on{background:var(--blue-soft);color:var(--blue);font-weight:700}
 nav .count{margin-left:auto;font-size:11px;background:var(--bg);border-radius:999px;padding:1px 8px;color:var(--muted)}
@@ -396,7 +396,7 @@ aside{display:none;border-left:1px solid var(--line);background:#fff;flex-direct
 .banner{background:var(--amber-soft);color:var(--amber);border-radius:8px;padding:8px 12px;font-size:12.5px;margin-bottom:14px;display:none}
 .banner.on{display:block}
 @media (max-width:1100px){
-  .app.agent-open{grid-template-columns:210px 1fr}
+  .app.agent-open{grid-template-columns:150px 1fr}
   .app.agent-open aside{position:fixed;inset:0;z-index:40}
   .g4{grid-template-columns:repeat(2,1fr)}
 }
@@ -862,7 +862,7 @@ details.lv-d summary::-webkit-details-marker{display:none}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<style>#roBanner,#loadBanner,#me,#agent,#agentToggle,#syncBtn{display:none!important}.app.agent-open{grid-template-columns:210px 1fr!important}</style>
+<style>#roBanner,#loadBanner,#me,#agent,#agentToggle,#syncBtn{display:none!important}.app.agent-open{grid-template-columns:150px 1fr!important}</style>
 </head>
 <body>
 <div class="app" id="app">
