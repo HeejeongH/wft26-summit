@@ -139,7 +139,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 
 .rep table.mx tr.tot td{background:none;border-top:2px solid var(--line);border-bottom:0;font-weight:700}.rep table.mx tr.tot .bar i{background:var(--blue)}
 .rep .mxleg em{font-style:normal;font-weight:700;color:var(--blue)}
 .rep .gtwrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
-.rep .gtwrap.g3{grid-template-columns:repeat(3,1fr);gap:12px}.rep .gtwrap.g3 > .gt:first-child .gtt{background:#fde68a !important}.rep .gtwrap.g3 > .gt:nth-child(2) .gtt{background:#e6e9f2 !important}.rep .gtwrap.g3 > .gt:nth-child(3) .gtt{background:var(--blue-soft) !important}
+.rep .gtwrap.g3{grid-template-columns:repeat(3,1fr);gap:12px}.rep .gtwrap.g3.gx > .gt.gt.gt .gtt{background:#f3f5f9 !important}.rep .gtwrap.g3 > .gt:first-child .gtt{background:#fde68a !important}.rep .gtwrap.g3 > .gt:nth-child(2) .gtt{background:#e6e9f2 !important}.rep .gtwrap.g3 > .gt:nth-child(3) .gtt{background:var(--blue-soft) !important}
 .rep .gtt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin-bottom:4px}.rep .gtt .gname,.rep .gtt .meta{white-space:nowrap}
 .rep .gname{font-weight:800;font-size:14px;padding-bottom:1px;border-bottom:2px solid var(--muted)}.rep .gname.gn-VVIP{border-color:#16224a;color:#16224a}.rep .gname.gn-VIP{border-color:#2c56c9;color:#2c56c9}
 .rep table.st{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
@@ -1757,8 +1757,17 @@ function renderReport() {
   const rest = MG.filter((G) => !["KEY", "VVIP", "VIP"].includes(G.g));
   UF = REP_FIELDS.concat(main.flatMap((G) => G.fields.map((x) => x.f)).filter((f) => !REP_FIELDS.includes(f))).filter((f, i, a) => a.indexOf(f) === i && main.some((G) => G.fields.some((x) => x.f === f)));
   const matrix = `<div class="gtwrap${main.length === 3 ? " g3" : ""}">${main.map(gtable).join("")}</div>
-    ${rest.length ? `<div class="rest">${rest.filter((G) => !(G.g === "내부" && (R.inner || []).length)).map((G) => `<span><b>${esc(G.g)}</b> 대상 ${G.total.all} · 발송 ${G.total.inv} · 참석 ${G.total.att} · 불참 ${G.total.dec}</span>`).join("")}</div>` : ""}
-    ${(R.inner || []).length ? `<div class="rest" style="margin-top:6px"><span><b>내부</b> 대상 ${R.inner.reduce((a, x) => a + x.all, 0)} · 참석 ${R.inner.reduce((a, x) => a + x.att, 0)}</span>${R.inner.map((x) => `<span><b>${esc(x.k)}</b> 대상 ${x.all} · 참석 ${x.att}</span>`).join("")}</div>` : ""}`;
+    ${(() => { const oth = rest.filter((G) => G.g !== "내부" || !(R.inner || []).length), inn = R.inner || [], cards = [];
+      const so = (k) => oth.reduce((a, G) => a + (G.total[k] || 0), 0), si = (k) => inn.reduce((a, x) => a + x[k], 0);
+      if (oth.length) cards.push(`<div class="gt"><div class="gtt"><span class="gname">${esc(oth.map((G) => G.g).join("·"))}</span><span class="meta">대상 ${so("all")}명 · 참석 ${so("att")}명</span></div>
+        <table class="st"><thead><tr><th>구분</th><th>대상</th><th>발송</th><th>참석</th><th>불참</th></tr></thead><tbody>
+        ${oth.map((G) => `<tr><td>${esc(G.g)}</td><td class="mut">${G.total.all}</td><td>${n0(G.total.inv, "b")}</td><td>${n0(G.total.att, "c-att b")}</td><td>${n0(G.total.dec, "c-dec b")}</td></tr>`).join("")}
+        <tr class="tot"><td>합계</td><td class="mut">${so("all")}</td><td>${n0(so("inv"), "b")}</td><td>${n0(so("att"), "c-att b")}</td><td>${n0(so("dec"), "c-dec b")}</td></tr></tbody></table></div>`);
+      if (inn.length) cards.push(`<div class="gt"><div class="gtt"><span class="gname">내부 인원</span><span class="meta">대상 ${si("all")}명 · 참석 ${si("att")}명</span></div>
+        <table class="st"><thead><tr><th>구분</th><th>대상</th><th>참석</th><th>미정</th></tr></thead><tbody>
+        ${inn.map((x) => `<tr><td>${esc(x.k)}</td><td class="mut">${x.all}</td><td>${n0(x.att, "c-att b")}</td><td>${n0(x.all - x.att, "mut")}</td></tr>`).join("")}
+        <tr class="tot"><td>합계</td><td class="mut">${si("all")}</td><td>${n0(si("att"), "c-att b")}</td><td>${n0(si("all") - si("att"), "mut")}</td></tr></tbody></table></div>`);
+      return cards.length ? `<div class="gtwrap g3 gx" style="margin-top:14px">${cards.join("")}</div>` : ""; })()}`;
   // ② 이름: 등급별 한 줄, 칩 색 = 분야
   const chip = (x) => `<span class="pn${x.c && x.c !== "확인 완료" ? " chk" : ""}" title="${esc(x.f + " · " + x.o + " " + (x.t || ""))}">${esc(nmSp(x.n))}</span>`;
   const flow = (xs) => xs.length ? repByGrade(xs).map(([g, ys]) => `<div class="pl"><span class="pg pg-${esc(g).replace(/\s/g, "")}">${esc(g)}</span><span class="pns">${(g === "Special" ? [...repSortKo(ys.filter((x) => /VVIP$/.test(x.g))), ...repSortKo(ys.filter((x) => !/VVIP$/.test(x.g)))] : repSortKo(ys)).map(chip).join("")}</span></div>`).join("") : `<div class="z" style="font-size:12px">없음</div>`;
