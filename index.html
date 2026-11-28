@@ -1624,9 +1624,10 @@ function repStaffRows(st) {
 }
 function buildReport(rows, mode, by) {
   const today = kstToday();
-  const list = (rows || []).filter((r) => r.src !== "hwp" && r.grade !== "명단 제외" && (r.name || r.org)).map((r) => ({ ...r, field: r.field || "기타", g: r.grade === "Special" ? (/_VVIP$/.test(r.gfull || "") ? "VVIP" : "VIP") : REP_GRADES.includes(r.grade) || r.grade === "실무위원회" || r.grade === "동행" || r.grade === "내부" ? r.grade : "구분 미정",
+  const wk = (v) => String(v || "").replace(/\s+/g, ""), WM = new Set(((S.live && S.live.rr) || []).filter((r) => String(r[28] || "").includes("[WFT 회원기관]")).map((r) => wk(r[4])));  // 비고에 [WFT 회원기관] 표시가 있는 사람
+  const list = (rows || []).filter((r) => r.src !== "hwp" && r.grade !== "명단 제외" && (r.name || r.org)).map((r) => ({ ...r, w: r.src !== "staff" && WM.has(wk(r.name)), field: r.field || "기타", g: r.grade === "Special" ? (/_VVIP$/.test(r.gfull || "") ? "VVIP" : "VIP") : REP_GRADES.includes(r.grade) || r.grade === "실무위원회" || r.grade === "동행" || r.grade === "내부" ? r.grade : "구분 미정",
     gl: r.grade === "Special" ? (r.gfull || "Special") : "" }));
-  const p = (r) => ({ n: r.name && !/^\(?미정\)?$/.test(r.name) ? r.name : r.org, o: r.org, t: r.title, f: r.field, g: r.gl || r.g, c: r.check || "", d: r.days || "", s: r.sub || "" });
+  const p = (r) => ({ n: r.name && !/^\(?미정\)?$/.test(r.name) ? r.name : r.org, o: r.org, t: r.title, f: r.field, g: r.gl || r.g, c: r.check || "", d: r.days || "", s: r.sub || "", w: r.w ? 1 : 0 });
   const orderF = [...REP_FIELDS, ...[...new Set(list.map((r) => r.field))].filter((f) => !REP_FIELDS.includes(f))];
   const orgKey = (r) => String(r.org || r.name).replace(/\s+/g, "");
   const agg = (rs) => {
@@ -1643,7 +1644,7 @@ function buildReport(rows, mode, by) {
   return {
     v: 3, sp: 1, date: today, at: Date.now(), mode: mode || "manual", by: by || null,
     grades, fields: byField(list), total: agg(list),
-    tg: (() => { const m = {}; list.forEach((r) => { const k = r.g === "실무위원회" ? "실무위원회" : r.field; m[k] = (m[k] || 0) + 1; if (r.g === "내부") { const q = "내부 인원/" + (r.sub || "기타"); m[q] = (m[q] || 0) + 1; } }); return m; })(),
+    tg: (() => { const m = {}; list.forEach((r) => { const k = r.g === "실무위원회" ? "실무위원회" : r.field; m[k] = (m[k] || 0) + 1; if (r.g === "내부") { const q = "내부 인원/" + (r.sub || "기타"); m[q] = (m[q] || 0) + 1; } if (r.w) m["내부 인원/WFT 회원기관"] = (m["내부 인원/WFT 회원기관"] || 0) + 1; }); return m; })(),
     inner: (() => { const O = ["WFT 회원기관", "최고책임자과정", "졸업생", "블루푸드테크학과", "푸드테크학과", "과천센터", "밥스누", "서울대 연구실"], rs = list.filter((r) => r.g === "내부");
       return [...O, ...[...new Set(rs.map((r) => r.sub || "기타"))].filter((k) => !O.includes(k))].map((k) => { const x = rs.filter((r) => (r.sub || "기타") === k); return { k, all: x.length, att: x.filter((r) => r.attend === "참석확정").length }; }).filter((x) => x.all); })(),
     today: list.filter((r) => r.sent === "발송완료" && repIsDay(r.sentDate, today)).map(p),
@@ -1796,10 +1797,10 @@ function renderReport() {
     const table = `<div style="overflow-x:auto"><table class="dtab dall" style="table-layout:fixed;min-width:${162 + (TG ? 44 : 0) + Ds.length * (gs.length + 1) * 34}px"><colgroup><col style="width:162px">${TG ? '<col style="width:44px">' : ""}${Ds.map(() => gs.map(() => "<col>").join("") + "<col>").join("")}</colgroup><thead>
       <tr><th rowspan="2">분야</th>${TG ? '<th rowspan="2" style="vertical-align:bottom">대상</th>' : ""}${Ds.map((D) => `<th class="dl dh" colspan="${gs.length + 1}"><b>${esc(D.d)}</b> <strong class="c-att">${D.xs.length}명</strong><div class="dsub">${D.cnt.length > 1 ? D.cnt.map(([l, n]) => `${esc(l)} ${n}`).join(" · ") : esc(D.sub)}</div></th>`).join("")}</tr>
       <tr>${Ds.map(() => gs.map((g, i) => `<th${i === 0 ? ' class="dl"' : ""}>${esc(g)}</th>`).join("") + "<th>계</th>").join("")}</tr></thead><tbody>
-      ${fs.map((f) => `<tr${all.some((x) => rk(x) === f) ? "" : ' class="e"'}><td>${esc(repLab(f))}</td>${tgc(TG && TG[f])}${cells((x) => rk(x) === f)}</tr>` + (f === IN ? subs.map((k) => `<tr class="sub"><td style="padding-left:12px;color:var(--muted)">└ ${esc(k)}</td>${tgc(TG && TG[IN + "/" + k])}${cells((x) => x.f === IN && sk(x) === k)}</tr>`).join("") : "")).join("")}
+      ${fs.map((f) => `<tr${all.some((x) => rk(x) === f) ? "" : ' class="e"'}><td>${esc(repLab(f))}</td>${tgc(TG && TG[f])}${cells((x) => rk(x) === f)}</tr>` + (f === IN ? subs.map((k) => `<tr class="sub"><td style="padding-left:12px;color:var(--muted)">└ ${esc(k)}${k === "WFT 회원기관" ? "*" : ""}</td>${tgc(TG && TG[IN + "/" + k])}${cells(k === "WFT 회원기관" ? (x) => x.w || (x.f === IN && sk(x) === k) : (x) => x.f === IN && sk(x) === k)}</tr>`).join("") : "")).join("")}
       <tr class="tot"><td>합계</td>${tgc(TG && R.total.all)}${cells(() => true)}</tr></tbody></table></div>`;
     const lists = Ds.map((D) => D.xs.length ? `<details class="nfold"><summary>${esc(D.d)} 명단 ${D.xs.length}명 · 펼치기</summary>${flow(D.xs)}</details>` : "").join("");
-    return `<div class="dcol">${table}${lists}</div>
+    return `<div class="dcol">${table}<div style="font-size:11px;color:var(--muted);margin:2px 0 6px">* WFT 회원기관(협의회 임원)은 분야 줄에도 들어 있는 사람을 한 번 더 보여주는 줄이에요. 합계에는 한 번만 셌어요.</div>${lists}</div>
     ${DS.none.length ? `<div class="dnone">일자 미정 ${DS.none.length}명 · <span class="pns">${repSortKo(DS.none).map(chip).join("")}</span> <span class="z">(S~Y열 날짜 미입력)</span></div>` : ""}`;
   })();
   const todF = repGroup(R.today).map(([f, xs]) => `${f} ${xs.length}`).join(" · ");
@@ -2421,7 +2422,8 @@ function rsCoverTable(rows, staff) {
     const g = String(r[1] || "").trim(); let R = g === "실무위원회" ? SW : F[RS_FIELD_ORDER.indexOf(String(r[3] || "").trim())];
     if (!R) { R = mk(String(r[3] || "").trim() || "(분야 미입력)"); F.push(R); }
     R.tg++; TOT.tg++;
-    RS_DAYS.forEach((day, k) => { if (rsStatus(r, day.cols).includes("참석")) add(R, k, RS_CV_G.indexOf(gOf(g))); });
+    const isW = String(r[28] || "").includes("[WFT 회원기관]"); if (isW) SUBS[0].tg++;  // 협의회 임원: 분야 줄에 세고, 「WFT 회원기관」 줄에 한 번 더 보여줌(합계 제외)
+    RS_DAYS.forEach((day, k) => { if (rsStatus(r, day.cols).includes("참석")) { const gi = RS_CV_G.indexOf(gOf(g)); add(R, k, gi); if (isW) { SUBS[0].tot[k]++; if (gi >= 0) SUBS[0].n[k][gi]++; } } });
   }
   for (const s of staff) {
     if (!s[1]) continue; const i = RS_CV_SUB.findIndex(([, gs]) => gs.includes(String(s[0] || "").trim())); if (i < 0) continue;
@@ -2431,6 +2433,7 @@ function rsCoverTable(rows, staff) {
   // 미리 정해 둔 분야 말고 다른 분야 줄이 여럿이면 같은 이름끼리 합침
   const Fm = []; F.forEach((R) => { const e = Fm.find((x) => x.label === R.label); if (!e) Fm.push(R); else { e.tg += R.tg; R.tot.forEach((v, k) => { e.tot[k] += v; R.n[k].forEach((w, j) => (e.n[k][j] += w)); }); } });
   const list = [...Fm, SW, IN, ...SUBS.filter((x) => x.tg || x.label === "WFT 회원기관" || x.label === "졸업생"), TOT];
+  SUBS[0].label = "WFT 회원기관(중복)";
   const W0 = 8900, W1 = 3413, WC = 1990, NG = RS_CV_G.length + 1;  // 8900 + 3413 + 18×1990 = 48133
   const cell = (tpl, o) => {
     let tc = tpl.replace(/<hp:cellSz width="\d+"/, `<hp:cellSz width="${o.w}"`).replace(/colAddr="\d+"/, `colAddr="${o.c}"`)
