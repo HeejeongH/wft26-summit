@@ -1777,6 +1777,21 @@ function renderReport() {
   const legend = `<div class="legend">${REP_FIELDS.concat(usedF.filter((f) => !REP_FIELDS.includes(f))).filter((f) => usedF.includes(f)).map((f) => { const [bg, fg] = repColor(f); return `<span><i style="background:${fg}"></i>${esc(repLab(f))}</span>`; }).join("")}</div>`;
   const dcol = (head, n, sub, body, cls) => `<div class="dcol ${cls || ""}"><div class="dhead"><b>${head}</b><strong>${n}명</strong></div>${sub ? `<div class="dsub">${sub}</div>` : ""}${body}</div>`;
   const NAME_MAX = 12;
+  const colBody = (xs) => {
+    if (!xs.length) return `<div class="zero" style="font-size:12px">없음</div>`;
+    const rk = (x) => (repGB(x.g) === "실무" ? "실무위원회" : x.f), IN = "내부 인원", IO = ["밥스누", "최고책임자과정", "블루푸드테크학과", "푸드테크학과", "과천센터", "서울대 연구실"];
+    const fs = [...REP_FIELDS, ...[...new Set(xs.map(rk))].filter((f) => !REP_FIELDS.includes(f) && f !== "실무위원회" && f !== IN), "실무위원회", ...(xs.some((x) => x.f === IN) ? [IN] : [])];
+    const subs = [...IO, ...[...new Set(xs.filter((x) => x.f === IN).map((x) => x.s || "기타"))].filter((k) => !IO.includes(k))].filter((k) => xs.some((x) => x.f === IN && (x.s || "기타") === k));
+    const scnt = (k, g) => xs.filter((x) => x.f === IN && (x.s || "기타") === k && (g == null || repGB(x.g) === g)).length;
+    const gs = [...REP_GORD.slice(0, 4), ...[...new Set([...R.att, ...R.dec].map((x) => repGB(x.g)))].filter((g) => !REP_GORD.slice(0, 4).includes(g))];
+    const cnt = (f, g) => xs.filter((x) => (f == null || rk(x) === f) && (g == null || repGB(x.g) === g)).length;
+    const td = (n, b) => `<td${b ? ' class="b"' : ""}>${n ? n : '<span class="z">·</span>'}</td>`;
+    const counts = `<table class="dtab"><thead><tr><th>분야</th>${gs.map((g) => `<th>${esc(g)}</th>`).join("")}<th>계</th></tr></thead><tbody>
+      ${fs.map((f) => `<tr${cnt(f) ? "" : ' class="e"'}><td>${esc(repLab(f))}</td>${gs.map((g) => td(cnt(f, g))).join("")}${td(cnt(f), 1)}</tr>` + (f === IN ? subs.map((k) => `<tr class="sub"><td style="padding-left:18px;color:var(--muted);font-size:.92em">└ ${esc(k)}</td>${gs.map((g) => td(scnt(k, g))).join("")}${td(scnt(k))}</tr>`).join("") : "")).join("")}
+      <tr class="tot"><td>합계</td>${gs.map((g) => td(cnt(null, g), 1)).join("")}${td(xs.length, 1)}</tr></tbody></table>`;
+    if (xs.length <= NAME_MAX) return counts + `<div class="nflow">${flow(xs)}</div>`;
+    return counts + `<details class="nfold"><summary>명단 ${xs.length}명 · 펼치기</summary>${flow(xs)}</details>`;
+  };
   const days = (() => {
     const Ds = DS.days, all = Ds.flatMap((D) => D.xs);
     const rk = (x) => (repGB(x.g) === "실무" ? "실무위원회" : x.f), IN = "내부 인원", IO = ["밥스누", "최고책임자과정", "블루푸드테크학과", "푸드테크학과", "과천센터", "서울대 연구실"];
