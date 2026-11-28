@@ -3480,8 +3480,8 @@ function renderTimeline() {
           <div class="pg-list">${parts.map((p, i) => { const rl = p.role || tlRoleOfLabel(p.label); const same = i > 0 && one(parts[i - 1].label) === one(p.label);
             const alt = p.alt ? `<div class="pg-alt"><div class="pg-or" style="color:#6b7280">또는 (미정)</div>${person1(p.alt)}</div>` : "";
             let nm = p.tbd ? person(p.who).replace(/<\/div>/, ` <span class="pg-tbd">${/후보/.test(p.label) ? "후보" : "미정"}</span></div>`) : person(p.who);
-            if (p.time) nm = nm.replace(/<\/div>/, ` <span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:6px;white-space:nowrap">${esc(p.time)}</span></div>`);
-            return `<div class="pg-sp${same ? " cont" : ""}${p.tbd ? " tbd" : ""}">${same ? `<span></span>` : `<span class="pg-badge${rl === "기조" ? " kn" : ""}">${esc(one(p.label))}</span>`}${nm}${alt}</div>`; }).join("")}</div>
+            const tm = p.time ? `<small style="display:block;margin-top:3px;font-size:11px;font-weight:600;color:#475569;white-space:nowrap">${esc(p.time)}</small>` : "";
+            return `<div class="pg-sp${same ? " cont" : ""}${p.tbd ? " tbd" : ""}">${same ? `<span></span>` : `<span style="grid-row:span 2;justify-self:start"><span class="pg-badge${rl === "기조" ? " kn" : ""}">${esc(one(p.label))}</span>${tm}</span>`}${nm}${alt}</div>`; }).join("")}</div>
           ${etc.length ? `<div class="pg-etc">${etc.map(esc).join("<br>")}</div>` : ""}</div></div>`;
       }
       return `<div class="pg-row"><div class="pg-t">${esc(r.time)}<small>${durTxt(r.dur)}</small></div>
