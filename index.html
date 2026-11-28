@@ -1611,9 +1611,19 @@ function repKeyNames() {
   if (!row) return [];
   return row.slice(2).flatMap((c) => String(c || "").split("\n")).map((l) => l.replace(/^[•\s]+/, "").replace(/\s*\(.*$/, "").trim()).filter(Boolean);
 }
+// 내부 인원(시트 「실무진」 탭: 연구실·학과·과천·밥스누·최고책임자과정)을 초청 현황 보고에 등급 「내부」로 넣음
+function repStaffRows(st) {
+  const T = (v) => v === true || String(v).toUpperCase() === "TRUE";
+  return (st || []).filter((s) => String(s[1] || "").trim() && String(s[0] || "").trim()).map((s) => {
+    const grp = String(s[0]).replace(/\(.*\)$/, "").trim(), bits = [3, 4, 5, 6, 7, 8, 9].map((c) => (T(s[c]) ? "1" : "-")).join("");
+    const nm = String(s[1]).trim();
+    return { name: nm.startsWith("(") ? grp + " (예정)" : nm.replace("(이마트)", ""), org: String(s[2] || grp).trim(), title: "", field: "내부 인원", grade: "내부", gfull: "내부",
+      sent: "", sentDate: "", attend: /1/.test(bits) ? "참석확정" : "미정", days: bits, check: "", src: "staff" };
+  });
+}
 function buildReport(rows, mode, by) {
   const today = kstToday();
-  const list = (rows || []).filter((r) => r.src !== "hwp" && r.grade !== "명단 제외" && (r.name || r.org)).map((r) => ({ ...r, field: r.field || "기타", g: r.grade === "Special" ? (/_VVIP$/.test(r.gfull || "") ? "VVIP" : "VIP") : REP_GRADES.includes(r.grade) || r.grade === "실무위원회" || r.grade === "동행" ? r.grade : "구분 미정",
+  const list = (rows || []).filter((r) => r.src !== "hwp" && r.grade !== "명단 제외" && (r.name || r.org)).map((r) => ({ ...r, field: r.field || "기타", g: r.grade === "Special" ? (/_VVIP$/.test(r.gfull || "") ? "VVIP" : "VIP") : REP_GRADES.includes(r.grade) || r.grade === "실무위원회" || r.grade === "동행" || r.grade === "내부" ? r.grade : "구분 미정",
     gl: r.grade === "Special" ? (r.gfull || "Special") : "" }));
   const p = (r) => ({ n: r.name && !/^\(?미정\)?$/.test(r.name) ? r.name : r.org, o: r.org, t: r.title, f: r.field, g: r.gl || r.g, c: r.check || "", d: r.days || "" });
   const orderF = [...REP_FIELDS, ...[...new Set(list.map((r) => r.field))].filter((f) => !REP_FIELDS.includes(f))];
@@ -1625,7 +1635,7 @@ function buildReport(rows, mode, by) {
       att, dec, none: inv.filter((r) => r.attend !== "참석확정" && r.attend !== "불참").length };
   };
   const byField = (rs) => orderF.map((f) => ({ f, ...agg(rs.filter((r) => r.field === f)) })).filter((x) => x.all);
-  const grades = [...REP_GRADES, "실무위원회", "동행", "구분 미정"].map((g) => { const rs = list.filter((r) => r.g === g); return { g, total: agg(rs), fields: byField(rs) }; }).filter((x) => x.total.all);
+  const grades = [...REP_GRADES, "실무위원회", "동행", "내부", "구분 미정"].map((g) => { const rs = list.filter((r) => r.g === g); return { g, total: agg(rs), fields: byField(rs) }; }).filter((x) => x.total.all);
   const KN = repKeyNames();
   if (KN.length) { const isKey = (r) => { const nm = String(r.name || "").trim(), og = String(r.org || "").replace(/\s+/g, ""); return KN.some((k) => nm === k || nm.split(/[･·]/)[0].trim() === k || (k.length > 2 && og.startsWith(k.replace(/\s+/g, "")))); };
     const ks = list.filter(isKey); if (ks.length) grades.unshift({ g: "KEY", total: agg(ks), fields: byField(ks) }); }
@@ -1640,7 +1650,7 @@ function buildReport(rows, mode, by) {
 }
 const repGroup = (arr) => { const m = {}; arr.forEach((x) => (m[x.f] = m[x.f] || []).push(x)); const ord = [...REP_FIELDS, ...Object.keys(m).filter((f) => !REP_FIELDS.includes(f))]; return ord.filter((f) => m[f]).map((f) => [f, m[f]]); };
 const repGB = (g) => /^Special/.test(g || "") ? "Special" : (g === "실무위원회" || g === "실무진") ? "실무" : (g || "구분 미정");
-const REP_GORD = ["VVIP", "VIP", "Special", "실무", "동행", "구분 미정"];
+const REP_GORD = ["VVIP", "VIP", "Special", "실무", "동행", "내부", "구분 미정"];
 const repByGrade = (xs) => { const m = {}; xs.forEach((x) => { const g = repGB(x.g); (m[g] = m[g] || []).push(x); }); return [...REP_GORD, ...Object.keys(m).filter((g) => !REP_GORD.includes(g))].filter((g) => m[g]).map((g) => [g, m[g]]); };
 const repSortKo = (xs) => [...xs].sort((a, b) => String(a.n).localeCompare(String(b.n), "ko"));
 const repNamesTxt = (xs, star) => repByGrade(xs).map(([g, ys]) => `[${g}] ` + repSortKo(ys).map((x) => nmSp(x.n) + (star && x.c && x.c !== "확인 완료" ? "*" : "")).join(", ")).join(" / ");
@@ -4141,7 +4151,7 @@ async function liveLoad(silent) {
       const built = buildGuestRows(va.slice(1), vb);
       const sdoc = { rows: built.rows, masterCount: built.masterCount, hwpCount: built.hwpCount, syncedAt: Date.now(), syncedBy: me };
       if (JSON.stringify(sdoc).length > 240000) sdoc.rows.forEach((r) => { r.note = (r.note || "").slice(0, 60); r.hwpNote = (r.hwpNote || "").slice(0, 60); });
-      S.sheet = sdoc; if (window.__STATIC) { try { S.report = buildReport(built.rows, "auto", ""); renderReport(); } catch (e) {} } renderGmPick(); if ($("gmBulk").style.display !== "none") renderGb();
+      S.sheet = sdoc; if (window.__STATIC) { try { S.report = buildReport(built.rows.concat(repStaffRows(S.live && S.live.st)), "auto", ""); renderReport(); } catch (e) {} } renderGmPick(); if ($("gmBulk").style.display !== "none") renderGb();
       if (S.db && !S.readOnly) await S.db.doc("sheet/latest").set(sdoc);
       if (!silent) {
         const lg = await ledgerSync(mcp, va.slice(1));
