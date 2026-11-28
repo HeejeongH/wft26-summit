@@ -3473,14 +3473,15 @@ function renderTimeline() {
       if (q) return `<div class="pg-row q"><div class="pg-t">${esc(r.time)}</div><div class="pg-q">${esc(one(r.title))}${durTxt(r.dur) ? ` <span>${durTxt(r.dur)}</span>` : ""}</div></div>`;
       if (parts.length) {
         const cls = trackCls(k.tag);
-        return `<div class="pg-row"><div class="pg-t">${esc(r.time)}<small>${durTxt(r.dur)}</small></div>
+        const ptm = parts.filter((p) => p.time).map((p) => `<div style="margin-top:5px;font-size:11.5px;font-weight:500;color:#475569;white-space:nowrap"><b style="font-weight:700">${esc(one(p.label))}</b> ${esc(p.time)}</div>`).join("");
+        return `<div class="pg-row"><div class="pg-t">${esc(r.time)}<small>${durTxt(r.dur)}</small>${ptm ? `<div style="margin-top:8px">${ptm}</div>` : ""}</div>
           <div class="pg-card tr-${cls}"><div class="pg-trk">${esc(k.tag || "SESSION")}</div><div class="pg-ti">${esc(k.title)}</div>${r.topic ? `<div class="pg-topic">${esc(one(r.topic))}</div>` : ""}
           ${mcs.length ? `<div class="pg-mc">사회 ${esc(mcs.join(", "))}</div>` : ""}
           ${chairs.length ? `<div class="pg-sp"><span class="pg-badge ch">좌장</span>${chairs.map(person).join("")}</div>` : ""}
           <div class="pg-list">${parts.map((p, i) => { const rl = p.role || tlRoleOfLabel(p.label); const same = i > 0 && one(parts[i - 1].label) === one(p.label);
             const alt = p.alt ? `<div class="pg-alt"><div class="pg-or" style="color:#6b7280">또는 (미정)</div>${person1(p.alt)}</div>` : "";
             let nm = p.tbd ? person(p.who).replace(/<\/div>/, ` <span class="pg-tbd">${/후보/.test(p.label) ? "후보" : "미정"}</span></div>`) : person(p.who);
-            const tm = p.time ? `<small style="display:block;margin-top:3px;font-size:11px;font-weight:600;color:#475569;white-space:nowrap">${esc(p.time)}</small>` : "";
+            const tm = "";
             return `<div class="pg-sp${same ? " cont" : ""}${p.tbd ? " tbd" : ""}">${same ? `<span></span>` : `<span style="grid-row:span 2;justify-self:start"><span class="pg-badge${rl === "기조" ? " kn" : ""}">${esc(one(p.label))}</span>${tm}</span>`}${nm}${alt}</div>`; }).join("")}</div>
           ${etc.length ? `<div class="pg-etc">${etc.map(esc).join("<br>")}</div>` : ""}</div></div>`;
       }
