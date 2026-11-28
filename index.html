@@ -2334,7 +2334,15 @@ function rsGradeRow(tpl, row, label, n, att) {
   return r.replace(/<hp:linesegarray>[\s\S]*?<\/hp:linesegarray>/g, rsLSA(48145));
 }
 function rsDayTable(rows, staff, day, part) {
-  const tcs = rsTcs(part.person), nc = tcs.length, ws = tcs.map((t) => +t.match(/<hp:cellSz width="(\d+)"/)[1]);
+  // 맨 왼쪽에 「등급」 칸을 하나 더 둠 (쪽을 넘겨도 지금 보는 줄이 VVIP인지 VIP인지 보이게). 그만큼 소속 칸을 줄임
+  const WG = 3200, shiftTc = (tc, i) => { tc = tc.replace(/colAddr="\d+"/, `colAddr="${i + 1}"`); return i === 2 ? tc.replace(/<hp:cellSz width="(\d+)"/, (m, w) => `<hp:cellSz width="${+w - WG}"`) : tc; };
+  const gradeTc = (tc) => tc.replace(/colAddr="\d+"/, 'colAddr="0"').replace(/<hp:cellSz width="\d+"/, `<hp:cellSz width="${WG}"`).replace(/<hp:cellMargin [^>]*\/>/, '<hp:cellMargin left="140" right="140" top="141" bottom="141"/>');
+  const tcs0 = rsTcs(part.person), gT = gradeTc(tcs0[1]);
+  const tcs = tcs0.map(shiftTc), nc = tcs.length, ws = tcs.map((t) => +t.match(/<hp:cellSz width="(\d+)"/)[1]);
+  const hT = rsTcs(part.hdr), hH = +hT[0].match(/<hp:cellSz width="\d+" height="(\d+)"/)[1];
+  const hdr = "<hp:tr>" + rsSetCell(gradeTc(hT[1]), { bf: "9", text: "등급", row: 0, h: hH }) + hT.map((tc, i) => { tc = shiftTc(tc, i); return i === 0 ? tc.replace(/borderFillIDRef="\d+"/, 'borderFillIDRef="10"') : tc; }).join("") + "</hp:tr>";
+  const gradeRowTpl = part.grade.replace(/<hp:cellSpan colSpan="(\d+)"/, (m, n) => `<hp:cellSpan colSpan="${+n + 1}"`);
+  const GL = { "실무위원": "실무", "내부 인원": "내부" };
   const blocks = [];  // {label, fields:[{name, items:[{ot,nm,st,yel}]}]}
   for (const [lab, gs] of RS_GRADES) {
     const byField = new Map();
@@ -2366,12 +2374,12 @@ function rsDayTable(rows, staff, day, part) {
     }
     if (fields.length) blocks.push({ label: "내부 인원", fields, internal: true });
   }
-  const out = [part.hdr]; let row = 1, no = 1; const summ = [];
+  const out = [hdr]; let row = 1, no = 1; const summ = [];
   for (const b of blocks) {
     const n = b.fields.reduce((a, f) => a + f.items.length, 0);
     const att = b.fields.reduce((a, f) => a + f.items.filter((x) => x.st.includes("참석")).length, 0);
     summ.push([b.label === "내부 인원" ? "내부" : b.label, att, n]);
-    out.push(rsGradeRow(part.grade, row++, b.label, n, att));
+    out.push(rsGradeRow(gradeRowTpl, row++, b.label, n, att));
     for (const f of b.fields) {
       f.items.forEach((it, i) => {
         const single = f.items.length === 1, first = i === 0, last = i === f.items.length - 1;
@@ -2382,18 +2390,18 @@ function rsDayTable(rows, staff, day, part) {
         const cells = tcs.map((tc, c) => {
           const bfBase = c === 0 ? c0 : c === nc - 1 ? end : mid;
           const bf = it.yel && c > 0 ? RS_YB[bfBase] : bfBase;
-          if (c === 0) return rsSetCell(tc, { bf, text: first ? `${f.name}\n(${f.items.length})` : "", cp: "41", fit: true, row, h });  // 긴 분야명(국제기구･주한 외교대사)은 좁은 글씨로 한 줄에
+          if (c === 0) return rsSetCell(tc, { bf: first ? "14" : last ? "15" : "12", text: first ? `${f.name}\n(${f.items.length})` : "", cp: "41", fit: true, row, h });  // 긴 분야명(국제기구･주한 외교대사)은 좁은 글씨로 한 줄에
           if (c === 1) return rsSetCell(tc, { bf, text: no, row, h });
           if (c === 2) return rsSetCell(tc, { bf, text: it.ot, cp: it.red ? "55" : "41", fit: true, row, h });
           if (c === 3) return rsSetCell(tc, { bf, text: it.nm, cp: it.red ? "55" : "53", fit: true, row, h, small: true });
           const st = it.st[c - 4]; return rsSetCell(tc, { bf, text: st, cp: RS_ST_CP[st], row, h });
         });
-        out.push("<hp:tr>" + cells.join("") + "</hp:tr>"); row++; no++;
+        out.push("<hp:tr>" + rsSetCell(gT, { bf: c0, text: GL[b.label] || b.label, cp: "60", fit: true, row, h }) + cells.join("") + "</hp:tr>"); row++; no++;
       });
     }
   }
   const height = out.reduce((a, tr) => a + Math.max(...[...tr.matchAll(/<hp:cellSz width="\d+" height="(\d+)"/g)].map((m) => +m[1])), 0);
-  const open = part.tblopen.replace(/rowCnt="\d+"/, `rowCnt="${row}"`).replace(/(<hp:sz width="\d+" widthRelTo="ABSOLUTE" height=")\d+"/, `$1${height}"`);
+  const open = part.tblopen.replace(/colCnt="(\d+)"/, (m, n) => `colCnt="${+n + 1}"`).replace(/rowCnt="\d+"/, `rowCnt="${row}"`).replace(/(<hp:sz width="\d+" widthRelTo="ABSOLUTE" height=")\d+"/, `$1${height}"`);
   return { xml: open + out.join(""), total: no - 1, summ };
 }
 // 표지 쪽 요약표: 분야(＋실무위원회·내부 인원 하위 그룹) × 날짜별 등급(VVIP·VIP·Special·동행·내부) 참석 인원, 대상 포함
